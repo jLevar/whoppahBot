@@ -2,8 +2,7 @@ import settings
 import discord
 from discord.ext import commands
 
-
-# logger = settings.logging.getLogger("bot")
+logger = settings.logging.getLogger("bot")
 
 def run():
     intents = discord.Intents.default()
@@ -13,7 +12,7 @@ def run():
 
     @bot.event
     async def on_ready():
-        # logger.info(f"User: {bot.user} (ID: {bot.user.id})")
+        logger.info(f"User: {bot.user} (ID: {bot.user.id})")
         print("_________")
 
     @bot.command(
@@ -26,7 +25,7 @@ def run():
     async def ping(ctx):
         await ctx.send("pong")
 
-    bot.run(settings.DISCORD_API_SECRET)  # root_logger=True
+    bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 
 
 if __name__ == "__main__":
