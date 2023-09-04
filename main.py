@@ -4,6 +4,7 @@ from discord.ext import commands
 
 logger = settings.logging.getLogger("bot")
 
+
 def run():
     intents = discord.Intents.default()
     intents.message_content = True
@@ -24,6 +25,10 @@ def run():
     )
     async def ping(ctx):
         await ctx.send("pong")
+
+    @bot.command()
+    async def joke(ctx):
+        await ctx.send("<dev>Insert joke here")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 
