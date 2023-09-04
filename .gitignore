@@ -1,3 +1,5 @@
 /venv/
 /.env
 /logs/infos.log
+.idea/*
+__pycache__/
