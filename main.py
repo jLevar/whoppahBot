@@ -29,6 +29,15 @@ def run():
     async def on_ready():
         logger.info(f"User: {bot.user} (ID: {bot.user.id})")
         print("_________")
+        for cmd_file in settings.CMDS_DIR.glob("*.py"):
+            if cmd_file.name != "__init.py__":
+                await bot.load_extension(f"cmds.{cmd_file.name[:-3]}")
+
+
+    @bot.event
+    async def on_command_error(ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("handled error globally")
 
     @bot.command(
         aliases=['p'],
@@ -50,11 +59,6 @@ def run():
             await ctx.send("Error: Command \"say\" requires a nonzero amount of arguments")
         else:
             await ctx.send(" ".join(what))
-
-    # IMPROPER ERROR HANDLING
-    @bot.command()
-    async def add(ctx, a: int, b: int):
-        await ctx.send(a + b)
 
     @bot.command()
     async def joined(ctx, who: discord.Member):
