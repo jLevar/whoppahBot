@@ -6,22 +6,10 @@ from discord.ext import commands
 logger = settings.logging.getLogger("bot")
 
 
-class Slapper(commands.Converter):
-
-    def __init__(self, *, use_nicknames) -> None:
-        self.use_nicknames = use_nicknames
-
-    async def convert(self, ctx, argument):
-        someone = random.choice(ctx.guild.members)
-        name = ctx.author
-        if self.use_nicknames:
-            name = ctx.author.nick
-        return f"{name} slaps {someone} with {argument}"
-
-
 def run():
     intents = discord.Intents.default()
     intents.message_content = True
+    intents.members = True
 
     bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -32,44 +20,19 @@ def run():
         for cmd_file in settings.CMDS_DIR.glob("*.py"):
             if cmd_file.name != "__init.py__":
                 await bot.load_extension(f"cmds.{cmd_file.name[:-3]}")
-
+        for cog_file in settings.COGS_DIR.glob("*.py"):
+            if cog_file.name != "__init__.py":
+                await bot.load_extension(f"cogs.{cog_file.name[:-3]}")
 
     @bot.event
     async def on_command_error(ctx, error):
+        logger.info(f"Error: {type(error)}\t{error} | is being handled globally")
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("handled error globally")
-
-    @bot.command(
-        aliases=['p'],
-        help="To use ping, simply type !ping or !p",
-        description="When pinged, the bot will respond with a pong",
-        brief="Responds with pong",
-        enabled=True
-    )
-    async def ping(ctx):
-        await ctx.send("pong")
-
-    @bot.command()
-    async def joke(ctx):
-        await ctx.send("<dev>Insert joke here")
-
-    @bot.command()
-    async def say(ctx, *what):
-        if what == ():
-            await ctx.send("Error: Command \"say\" requires a nonzero amount of arguments")
-        else:
-            await ctx.send(" ".join(what))
-
-    @bot.command()
-    async def joined(ctx, who: discord.Member):
-        await ctx.send(who.joined_at)
-
-    @bot.command()
-    async def slap(ctx, reason: Slapper(use_nicknames=True)):
-        await ctx.send(reason)
+            await ctx.send("you're missing an argument bruh")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 
 
 if __name__ == "__main__":
     run()
+
