@@ -2,11 +2,14 @@ import random
 import settings
 import discord
 from discord.ext import commands
+import database
+from models.account import Account
 
 logger = settings.logging.getLogger("bot")
 
 
 def run():
+    database.db.create_tables([Account])
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
