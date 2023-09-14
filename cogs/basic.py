@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 import random
+import datetime
+from discord.ext import commands, tasks
 
 
 class Basic(commands.Cog):
@@ -46,6 +48,17 @@ class Basic(commands.Cog):
     async def joined(self, ctx, who: discord.Member):
         await ctx.send(who.joined_at)
 
+    @tasks.loop(time=[datetime.time(hour=11, minute=11), datetime.time(hour=23, minute=11)])
+    async def eleven_eleven(self):
+        await discord.Client().get_channel(1145891925778513951).send("11:11 - Make a wish")
+
+    @commands.command()
+    async def test(self, ctx):
+        client = discord.Client()
+        channel = client.get_channel(1145891925778513951)
+        await channel.send("TEST")
+
 
 async def setup(bot):
     await bot.add_cog(Basic(bot))
+

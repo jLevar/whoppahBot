@@ -24,12 +24,17 @@ LOGGING_CONFIG = {
         "standard": {"format": "%(levelname)-10s - %(name)-15s : %(message)s"},
     },
     "handlers": {
-        "console": {
+        "consoleDebug": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "standard",
         },
-        "console2": {
+        "consoleDebugVerbose": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "consoleWarning": {
             "level": "WARNING",
             "class": "logging.StreamHandler",
             "formatter": "standard",
@@ -43,9 +48,10 @@ LOGGING_CONFIG = {
         },
     },
     "loggers": {
-        "bot": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "bot": {"handlers": ["consoleDebug"], "level": "INFO", "propagate": False},
+        "econ": {"handlers": ["consoleDebugVerbose"], "level": "INFO", "propagate": False},
         "discord": {
-            "handlers": ["console2", "file"],
+            "handlers": ["consoleWarning", "file"],
             "level": "INFO",
             "propagate": False,
         },
@@ -53,3 +59,6 @@ LOGGING_CONFIG = {
 }
 
 dictConfig(LOGGING_CONFIG)
+
+###
+# WHEN WE RETURN: WE WERE WORKING MAKING A NEW HANDLER THAT USES THE VERBOSE FORMATTER

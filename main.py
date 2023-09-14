@@ -2,14 +2,14 @@ import random
 import settings
 import discord
 from discord.ext import commands
-import database
+from models.account import accounts_db
 from models.account import Account
 
 logger = settings.logging.getLogger("bot")
 
 
 def run():
-    database.db.create_tables([Account])
+    accounts_db.create_tables([Account])
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
@@ -31,7 +31,9 @@ def run():
     async def on_command_error(ctx, error):
         logger.info(f"Error: {type(error)}\t{error} | is being handled globally")
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("you're missing an argument bruh")
+            await ctx.send("Error: Missing Argument!")
+        if isinstance(error, commands.errors.NotOwner):
+            await ctx.send("Error: Invalid Permissions!")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 
