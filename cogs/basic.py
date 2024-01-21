@@ -58,6 +58,20 @@ class Basic(commands.Cog):
         channel = client.get_channel(1145891925778513951)
         await channel.send("TEST")
 
+    @commands.command()
+    async def snail(self, ctx):
+        author = ctx.author
+        embed = discord.Embed(
+            colour=discord.Colour.dark_green(),
+            description="Race to the finish line in this nail biting game of coordination and sabatoge!",
+            title="Snail Speedway",
+            url="http://snailspeedway.click"
+        )
+        embed.set_footer(text=f"Requested by {author}", icon_url=author.avatar.url)
+        embed.set_author(name="Sir John W. Whoppah")
+
+        await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(Basic(bot))

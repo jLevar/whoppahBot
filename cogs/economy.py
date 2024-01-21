@@ -6,7 +6,7 @@ import settings
 from models.account import Account
 import asyncio
 
-
+#TODO certifate of deposits
 logger = settings.logging.getLogger('econ')
 
 
@@ -30,7 +30,7 @@ class Economy(commands.Cog):
     @staticmethod
     async def convert_time(time, units="seconds"):
         for i in range(2):
-            if time > 60:
+            if time >= 60:
                 time /= 60
                 units = "minutes" if units == "seconds" else "hours"
         return time, units
@@ -38,7 +38,7 @@ class Economy(commands.Cog):
     @commands.command()
     async def balance(self, ctx):
         account = Account.fetch(ctx.message.author.id)
-        await ctx.send(f"Your balance is ${account.amount:.2f} Burger Bucks")
+        await ctx.send(f"Your balance is ${account.amount:.2f} Burger Buck$")
 
     @commands.command()
     async def coin(self, ctx, choice: str, amount: int):
