@@ -19,7 +19,7 @@ class Basic(commands.Cog):
         await ctx.send(f"Hello {member.name}")
 
     @commands.command(
-        aliases=['p'],
+        aliases=['pang'],
         help="To use ping, simply type !ping or !p",
         description="When pinged, the bot will respond with a pong",
         brief="Responds with pong",

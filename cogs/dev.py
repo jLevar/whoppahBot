@@ -45,9 +45,11 @@ class Dev(commands.Cog):
         await self.bot.unload_extension(cog_name)
         await ctx.send("Unloaded successfully")
 
-    @commands.command()
+    @commands.command(aliases=['r'])
     @commands.is_owner()
     async def reload(self, ctx, cog: str):
+        if cog == "e":
+            cog = "economy"
         cog_name = f"cogs.{cog.lower()}"
 
         if cog_name == "cogs.dev":

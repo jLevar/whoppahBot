@@ -7,16 +7,16 @@ logger = settings.logging.getLogger('bot')
 
 
 class Account(peewee.Model):
-    user_id: str = peewee.CharField(max_length=255)
-    guild_id: str = peewee.CharField(max_length=255)
+    user_id: str = peewee.CharField(max_length=255, primary_key=True)
     balance: float = peewee.FloatField()
+    job_title: str = peewee.CharField(max_length=255)
 
     class Meta:
         database = accounts_db
 
     @staticmethod
     def fetch(user_id: str):
-        account, is_created = Account.get_or_create(user_id=user_id, defaults={'guild_id': 0, 'balance': 0})
+        account, is_created = Account.get_or_create(user_id=user_id, defaults={'balance': 0, 'job_title': "Unemployed"})
         return account
 
     @staticmethod
