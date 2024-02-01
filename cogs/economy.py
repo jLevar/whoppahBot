@@ -42,7 +42,7 @@ class Economy(commands.Cog):
         account = Account.fetch(ctx.message.author.id)
         await ctx.send(f"Your balance is ${account.balance:.2f} Burger Bucks!")
 
-    @commands.command()
+    @commands.command(aliases=['lb'])
     async def leaderboard(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.dark_green(),
@@ -88,6 +88,10 @@ class Economy(commands.Cog):
 
         if num_hours <= 0:
             await ctx.send("You have to work for more than 0 hours to get paid")
+            return
+
+        if num_hours > 24:
+            await ctx.send("You cannot work more than 24 hours in a single shift")
             return
 
         self.work_timers[user_id] = (asyncio.get_event_loop().time(), num_hours, hourly_rate)

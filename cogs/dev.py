@@ -70,10 +70,18 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def deposit(self, ctx, amount):
-        account = Account.fetch(ctx.message.author.id)
+    async def deposit(self, ctx, amount, mention="<@350393195085168650>"):
+        account = Account.fetch(mention[2:-1])
         account.balance += float(amount)
         account.save()
+
+    @commands.command(aliases=['cdb'])
+    @commands.is_owner()
+    async def clean_database(self, ctx):
+        # for user in Account.select().where(Account.user_id << 3503931950851686501):
+        #     await ctx.send(f"{user.user_id}")
+        await ctx.send("This function broke as hell atm!")
+        await ctx.send("Data Cleaning Complete!")
 
 
 async def setup(bot):

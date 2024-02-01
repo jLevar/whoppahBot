@@ -16,7 +16,7 @@ class Account(peewee.Model):
 
     @staticmethod
     def fetch(user_id: str):
-        account, is_created = Account.get_or_create(user_id=user_id, defaults={'guild_id': 0, 'amount': 0})
+        account, is_created = Account.get_or_create(user_id=user_id, defaults={'guild_id': 0, 'balance': 0})
         return account
 
     @staticmethod

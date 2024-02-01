@@ -72,6 +72,11 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=['mb'])
+    async def mention_battle(self, ctx, mention):
+        await ctx.send(f"You pinged user_id: {mention[2:-1]}")
+        await ctx.send(f"Get pinged! {ctx.author.mention}")
+
 
 async def setup(bot):
     await bot.add_cog(Basic(bot))

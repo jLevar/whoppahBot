@@ -3,3 +3,4 @@
 /logs/infos.log
 .idea/*
 __pycache__/
+/databases/
