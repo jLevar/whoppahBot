@@ -1,6 +1,6 @@
-import discord
 from discord.ext import commands
 import settings
+from models.account import Account
 
 logger = settings.logging.getLogger('bot')
 
@@ -60,6 +60,20 @@ class Dev(commands.Cog):
 
         await self.bot.load_extension(cog_name)
         await ctx.send("Reloaded successfully")
+
+    ## ECONOMY
+    @commands.command()
+    @commands.is_owner()
+    async def close_account(self, ctx):
+        Account.close_account(ctx)
+        await ctx.send("Account Closed!")
+
+    @commands.command()
+    @commands.is_owner()
+    async def deposit(self, ctx, amount):
+        account = Account.fetch(ctx.message.author.id)
+        account.balance += float(amount)
+        account.save()
 
 
 async def setup(bot):

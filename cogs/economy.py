@@ -1,5 +1,4 @@
 import discord
-import peewee
 import random
 from discord.ext import commands, tasks
 import settings
@@ -34,28 +33,14 @@ class Economy(commands.Cog):
     ## HELPER METHODS
     @staticmethod
     async def deposit(account, amount):
-        account.amount += amount
+        account.balance += amount
         account.save()
-
-    @commands.command()
-    @commands.is_owner()
-    async def open_account(self, ctx):
-        await ctx.send("WARNING - DEPRECATED METHOD")
-        Account.create_account(ctx)
-        await ctx.send("Account Open!")
-
-    @commands.command()
-    @commands.is_owner()
-    async def close_account(self, ctx):
-        await ctx.send("WARNING - DEPRECATED METHOD")
-        Account.close_account(ctx)
-        await ctx.send("Account Closed!")
 
     ## COMMANDS
     @commands.command()
     async def balance(self, ctx):
         account = Account.fetch(ctx.message.author.id)
-        await ctx.send(f"Your balance is ${account.amount:.2f} Burger Buck$")
+        await ctx.send(f"Your balance is ${account.balance:.2f} Burger Bucks!")
 
     @commands.command()
     async def leaderboard(self, ctx):
@@ -68,7 +53,7 @@ class Economy(commands.Cog):
         i = 1
         for user_id in Account.leaderboard(10):
             user = await self.bot.fetch_user(user_id)
-            embed.description += f"{i})\t{user.name} -- ${Account.fetch(user_id).amount}\n"
+            embed.description += f"{i})\t{user.name} -- ${Account.fetch(user_id).balance:.2f}\n"
             i += 1
         await ctx.send(embed=embed)
 
@@ -78,7 +63,7 @@ class Economy(commands.Cog):
             await ctx.send("You cannot 0 or fewer Burger Bucks")
             return
         account = Account.fetch(ctx.message.author.id)
-        if amount > account.amount:
+        if amount > account.balance:
             await ctx.send("You don't have enough Burger Bucks")
             return
 
