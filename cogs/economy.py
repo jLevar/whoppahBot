@@ -6,8 +6,21 @@ import settings
 from models.account import Account
 import asyncio
 
-#TODO certifate of deposits
+
 logger = settings.logging.getLogger('econ')
+
+
+@staticmethod
+async def convert_time(time, units="seconds"):
+    for i in range(2):
+        if time >= 60:
+            time /= 60
+            units = "minutes" if units == "seconds" else "hours"
+    return time, units
+
+
+async def setup(bot):
+    await bot.add_cog(Economy(bot))
 
 
 class Economy(commands.Cog):
@@ -18,29 +31,48 @@ class Economy(commands.Cog):
         self.work_timers = {}
         self.check_work_timers.start()
 
-    @commands.command()
-    async def open_account(self, ctx):
-        Account.create_account(ctx.message)
-
+    ## HELPER METHODS
     @staticmethod
     async def deposit(account, amount):
         account.amount += amount
         account.save()
 
-    @staticmethod
-    async def convert_time(time, units="seconds"):
-        for i in range(2):
-            if time >= 60:
-                time /= 60
-                units = "minutes" if units == "seconds" else "hours"
-        return time, units
+    @commands.command()
+    @commands.is_owner()
+    async def open_account(self, ctx):
+        await ctx.send("WARNING - DEPRECATED METHOD")
+        Account.create_account(ctx)
+        await ctx.send("Account Open!")
 
+    @commands.command()
+    @commands.is_owner()
+    async def close_account(self, ctx):
+        await ctx.send("WARNING - DEPRECATED METHOD")
+        Account.close_account(ctx)
+        await ctx.send("Account Closed!")
+
+    ## COMMANDS
     @commands.command()
     async def balance(self, ctx):
         account = Account.fetch(ctx.message.author.id)
         await ctx.send(f"Your balance is ${account.amount:.2f} Burger Buck$")
 
     @commands.command()
+    async def leaderboard(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.dark_green(),
+            title="Top 10 Richest Users",
+            description=""
+        )
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+        i = 1
+        for user_id in Account.leaderboard(10):
+            user = await self.bot.fetch_user(user_id)
+            embed.description += f"{i})\t{user.name} -- ${Account.fetch(user_id).amount}\n"
+            i += 1
+        await ctx.send(embed=embed)
+
+    @commands.command(help="Usage: !coin [Heads/Tails] [Amount to Bet]", aliases=['c'])
     async def coin(self, ctx, choice: str, amount: int):
         if amount <= 0:
             await ctx.send("You cannot 0 or fewer Burger Bucks")
@@ -56,10 +88,10 @@ class Economy(commands.Cog):
         await self.deposit(account, amount)
         await ctx.send("You Won!!" if amount > 0 else "You Lost!!")
 
-    @commands.command()
+    @commands.command(help="Usage: !work [Shift Duration (hours)]")
     async def work(self, ctx, num_hours: float = 0.0):
         user_id = ctx.author.id
-        job_title = 'Burger Flipper'  # aTODO store user's job somewhere and get it here
+        job_title = 'Burger Flipper'  # TODO store user's job somewhere and get it here
         hourly_rate = self.jobs[job_title]
 
         if user_id in self.work_timers:
@@ -76,6 +108,7 @@ class Economy(commands.Cog):
         self.work_timers[user_id] = (asyncio.get_event_loop().time(), num_hours, hourly_rate)
         await ctx.send("You started working!")
 
+    ## TASKS
     @tasks.loop(seconds=60)  # Check every minute
     async def check_work_timers(self):
         logger.info(f"{self.work_timers}")
@@ -97,5 +130,3 @@ class Economy(commands.Cog):
         await self.bot.wait_until_ready()
 
 
-async def setup(bot):
-    await bot.add_cog(Economy(bot))

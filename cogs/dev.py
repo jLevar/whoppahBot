@@ -4,7 +4,6 @@ import settings
 
 logger = settings.logging.getLogger('bot')
 
-#FIX SEVER OWNER PERMISSIONS SO ONLY I CAN USE TAG
 
 class Dev(commands.Cog):
     def __init__(self, bot):
