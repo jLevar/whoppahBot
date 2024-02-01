@@ -10,6 +10,8 @@ class Account(peewee.Model):
     user_id: str = peewee.CharField(max_length=255, primary_key=True)
     balance: float = peewee.FloatField()
     job_title: str = peewee.CharField(max_length=255)
+    shift_start: float = peewee.FloatField()
+    shift_length: int = peewee.IntegerField()
 
     class Meta:
         database = accounts_db

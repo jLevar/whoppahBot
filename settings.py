@@ -14,6 +14,8 @@ CMDS_DIR = BASE_DIR / "cmds"
 
 COGS_DIR = BASE_DIR / "cogs"
 
+IMGS_DIR = BASE_DIR / "imgs"
+
 LOGGING_CONFIG = {
     "version": 1,
     "disabled_existing_loggers": False,

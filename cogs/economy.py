@@ -5,6 +5,7 @@ from discord.ext import commands, tasks
 import settings
 from models.account import Account
 import asyncio
+import graphics
 
 
 logger = settings.logging.getLogger('econ')
@@ -27,7 +28,6 @@ class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.jobs = {"Unemployed": 0, "Burger Flipper": 690.00}
-        self.work_timers = {}
         self.check_work_timers.start()
 
     ## HELPER METHODS
@@ -71,32 +71,43 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(help="Usage: !work [Shift Duration (hours)]")
-    async def work(self, ctx, num_hours: float = 0.0):
+    async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
-        job_title = Account.fetch(user_id).job_title
-        hourly_rate = self.jobs[job_title]
+        account = Account.fetch(user_id)
+        num_hours = int(num_hours)
 
-        if user_id in self.work_timers:
-            start_time, num_hours, hourly_rate = self.work_timers[user_id]
-            shift_length, s_units = await convert_time(num_hours * 3600, "seconds")
-            elapsed_time, e_units = await convert_time((asyncio.get_event_loop().time() - start_time), "seconds")
-            await ctx.send(f"You already started working your {shift_length} {s_units[:-1]} shift,"
-                           f" {elapsed_time:.2f} {e_units} ago")
+        if account.shift_start is not None:
+            elapsed_seconds = (asyncio.get_event_loop().time() - account.shift_start)
+            elapsed_time, e_units = await convert_time(elapsed_seconds, "seconds")
+            percent_left = ((elapsed_seconds / 3600) / account.shift_length) * 100
+            graphics.create_progress_bar(percent_left)
+
+            embed = discord.Embed(
+                title=f"Your shift is {percent_left:.2f}% complete",
+                colour=discord.Colour.blue(),
+                description=f"You started your {account.shift_length} hour shift {elapsed_time:.2f} {e_units} ago"
+            )
+
+            file = discord.File(f"{settings.IMGS_DIR}/progress.png", filename="progress.png")
+            embed.set_image(url="attachment://progress.png")
+            await ctx.send(file=file, embed=embed)
             return
 
-        if num_hours <= 0:
-            await ctx.send("You have to work for more than 0 hours to get paid!")
+        if num_hours < 1:
+            await ctx.send("You have to work at least 1 hour to get paid!")
             return
 
         if num_hours > 24:
             await ctx.send("You cannot work more than 24 hours in a single shift!")
             return
 
-        if job_title == "Unemployed":
+        if account.job_title == "Unemployed":
             await ctx.send("You can't work until you are hired!")
             return
 
-        self.work_timers[user_id] = (asyncio.get_event_loop().time(), num_hours)
+        account.shift_start = asyncio.get_event_loop().time()
+        account.shift_length = num_hours
+        account.save()
         await ctx.send("You started working!")
 
     @commands.command()
@@ -134,18 +145,22 @@ class Economy(commands.Cog):
     @tasks.loop(seconds=60)  # Check every minute
     async def check_work_timers(self):
         current_time = asyncio.get_event_loop().time()
-        logger.info(f"{current_time} | {self.work_timers}")
-        for user_id, (start_time, num_hours) in self.work_timers.copy().items():
-            elapsed_hours = (current_time - start_time) / 3600  # Convert seconds to hours
-            if elapsed_hours >= num_hours:
-                user = self.bot.get_user(user_id)
-                account = Account.fetch(user_id)
-                currency_earned = round(elapsed_hours * self.jobs[account.job_title], 2)
-                if user:
-                    await self.deposit(account, currency_earned)
-                    await user.send(f"You earned ${currency_earned} Burger Bucks for working!")
-                del self.work_timers[user_id]
-                logger.info(f"Removed {user_id} from work_timers")
+        logger.info(f"Current Time = {current_time}: ")
+
+        for account in Account.select().where(Account.shift_start.is_null(False)):
+            elapsed_hours = (current_time - account.shift_start) / 3600
+            logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+
+            if elapsed_hours >= account.shift_length:
+                money_earned = round(account.shift_length * self.jobs[account.job_title], 2)
+                user = await self.bot.fetch_user(account.user_id)
+                await self.deposit(account, money_earned)
+                await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
+                account.shift_start = None
+                account.shift_length = None
+                account.save()
+
+        logger.info(f"-----------------------------------")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):
