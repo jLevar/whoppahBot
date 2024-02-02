@@ -2,7 +2,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 
 
 def create_progress_bar(percent: float):
-    def draw_progress_bar(d, x, y, w, h, progress, bg="black", fg="blue"):
+    def draw_progress_bar(d, x, y, w, h, progress, bg="#001A4D", fg="#4DA6FF"):
         # draw background
         d.ellipse((x+w, y, x+h+w, y+h), fill=bg)
         d.ellipse((x, y, x+h, y+h), fill=bg)

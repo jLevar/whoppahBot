@@ -12,13 +12,14 @@ class Account(peewee.Model):
     job_title: str = peewee.CharField(max_length=255)
     shift_start: float = peewee.FloatField()
     shift_length: int = peewee.IntegerField()
+    has_redeemed_daily: bool = peewee.BooleanField()
 
     class Meta:
         database = accounts_db
 
     @staticmethod
     def fetch(user_id: str):
-        account, is_created = Account.get_or_create(user_id=user_id, defaults={'balance': 0, 'job_title': "Unemployed"})
+        account, is_created = Account.get_or_create(user_id=user_id, defaults={'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0})
         return account
 
     @staticmethod

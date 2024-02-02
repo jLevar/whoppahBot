@@ -36,7 +36,9 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *what):
-        if what == ():
+        if what == "@everyone":
+            await ctx.send("not cool!")
+        elif what == ():
             # NOTE - This error message is a prank DM
             with open("error_message.txt", "r") as f:
                 error_message = f.read()

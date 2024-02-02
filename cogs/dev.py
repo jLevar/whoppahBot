@@ -1,3 +1,4 @@
+import discord.errors
 from discord.ext import commands
 import settings
 from models.account import Account
@@ -13,6 +14,15 @@ class Dev(commands.Cog):
     def cleanup_timers(cog_instance):
         if hasattr(cog_instance, "check_work_timers") and cog_instance.check_work_timers.is_running():
             cog_instance.check_work_timers.cancel()
+
+    @staticmethod
+    async def validate_user_id(self, ctx, user_id):
+        try:
+            await self.bot.fetch_user(user_id)
+        except discord.errors.HTTPException as e:
+            await ctx.send(f"{type(e)}\nError: Invalid Mention")
+            return False
+        return True
 
     @commands.command()
     @commands.is_owner()
@@ -73,7 +83,12 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def deposit(self, ctx, amount, mention="<@350393195085168650>"):
-        account = Account.fetch(mention[2:-1])
+        user_id = mention[2:-1]
+        if not self.valid_user_id(user_id):
+            await ctx.send("Invalid user_id")
+            return
+
+        account = Account.fetch(user_id)
         account.balance += float(amount)
         account.save()
 
