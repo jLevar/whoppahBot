@@ -15,7 +15,6 @@ class Dev(commands.Cog):
         if hasattr(cog_instance, "check_work_timers") and cog_instance.check_work_timers.is_running():
             cog_instance.check_work_timers.cancel()
 
-    @staticmethod
     async def validate_user_id(self, ctx, user_id):
         try:
             await self.bot.fetch_user(user_id)
@@ -84,7 +83,7 @@ class Dev(commands.Cog):
     @commands.is_owner()
     async def deposit(self, ctx, amount, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not self.valid_user_id(user_id):
+        if not self.validate_user_id(ctx, user_id):
             await ctx.send("Invalid user_id")
             return
 
@@ -98,7 +97,7 @@ class Dev(commands.Cog):
         # for user in Account.select().where(Account.user_id << 3503931950851686501):
         #     await ctx.send(f"{user.user_id}")
         await ctx.send("This function broke as hell atm!")
-        await ctx.send("Data Cleaning Complete!")
+        # await ctx.send("Data Cleaning Complete!")
 
 
 async def setup(bot):

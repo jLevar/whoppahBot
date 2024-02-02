@@ -1,3 +1,5 @@
+import datetime
+
 import discord
 import random
 from discord.ext import commands, tasks
@@ -239,7 +241,7 @@ class Economy(commands.Cog):
         await msg.edit(embed=embed)
 
     @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(1, 2.5, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
         if amount <= 0:
             await ctx.send("You cannot 0 or fewer Burger Bucks")
@@ -262,7 +264,7 @@ class Economy(commands.Cog):
         await ctx.send("You Won!!" if amount > 0 else "You Lost!!")
 
     ## TASKS
-    @tasks.loop(seconds=60)  # Check every minute
+    @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
         current_time = asyncio.get_event_loop().time()
         logger.info(f"Current Time = {current_time}")
@@ -281,6 +283,14 @@ class Economy(commands.Cog):
                 account.save()
 
         # logger.info(f"-----------------------------------")
+
+    new_day = datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc)
+
+    @tasks.loop(time=new_day)
+    async def refresh_daily(self):
+        query = Account.update(has_redeemed_daily=False)
+        query.execute()
+        logger.info("DAILY'S REFRESHED!")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):
