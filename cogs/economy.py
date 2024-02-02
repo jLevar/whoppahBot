@@ -38,12 +38,12 @@ class Economy(commands.Cog):
         try:
             await self.bot.fetch_user(user_id)
         except discord.errors.HTTPException as e:
-            await ctx.send(f"{type(e)}\nError: Invalid Mention")
+            await ctx.send(f"Error: Invalid Mention")
             return False
         return True
 
     ## COMMANDS
-    @commands.command(aliases=['b'])
+    @commands.command(aliases=['bal', 'b'])
     async def balance(self, ctx):
         account = Account.fetch(ctx.author.id)
         await ctx.send(f"Your balance is ${account.balance:.2f} Burger Bucks!")
@@ -77,7 +77,7 @@ class Economy(commands.Cog):
             await ctx.send("you ain't got the money you broke bastard 😂😂😂")
             return
 
-        if not self.validate_user_id(ctx, mention[2:-1]):
+        if not await self.validate_user_id(ctx, mention[2:-1]):
             await ctx.send("i ain't sending no money to that fake user 😂😂😂")
             return
 
@@ -180,6 +180,7 @@ class Economy(commands.Cog):
         await ctx.send("Today's gift of $50 has been added to your account!")
 
     @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def deal_with_the_devil(self, ctx, choice: int, amount: float):
         embed = discord.Embed(
             colour=discord.Colour.dark_red(),
@@ -237,7 +238,8 @@ class Economy(commands.Cog):
         embed.description += f"I hope to see another deal is in our future"
         await msg.edit(embed=embed)
 
-    @commands.command(help="Usage: !coin [Heads/Tails] [Amount to Bet]", aliases=['c'])
+    @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
         if amount <= 0:
             await ctx.send("You cannot 0 or fewer Burger Bucks")
@@ -263,11 +265,11 @@ class Economy(commands.Cog):
     @tasks.loop(seconds=60)  # Check every minute
     async def check_work_timers(self):
         current_time = asyncio.get_event_loop().time()
-        logger.info(f"Current Time = {current_time}: ")
+        logger.info(f"Current Time = {current_time}")
 
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_hours = (current_time - account.shift_start) / 3600
-            logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+            # logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
 
             if elapsed_hours >= account.shift_length:
                 money_earned = round(account.shift_length * self.jobs[account.job_title], 2)
@@ -278,7 +280,7 @@ class Economy(commands.Cog):
                 account.shift_length = None
                 account.save()
 
-        logger.info(f"-----------------------------------")
+        # logger.info(f"-----------------------------------")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):
