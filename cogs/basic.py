@@ -1,8 +1,11 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import random
 import datetime
-from discord.ext import commands, tasks
+
+
+async def setup(bot):
+    await bot.add_cog(Basic(bot))
 
 
 class Basic(commands.Cog):
@@ -11,7 +14,7 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if random.randint(0, 20) == 0:
+        if random.randint(0, 30) == 0:
             await message.add_reaction("😂")
 
     @commands.command()
@@ -78,9 +81,3 @@ class Basic(commands.Cog):
     async def mention_battle(self, ctx, mention):
         await ctx.send(f"You pinged user_id: {mention[2:-1]}")
         await ctx.send(f"Get pinged! {ctx.author.mention}")
-
-
-async def setup(bot):
-    await bot.add_cog(Basic(bot))
-
-

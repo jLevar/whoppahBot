@@ -1,4 +1,3 @@
-import random
 import settings
 import discord
 from discord.ext import commands

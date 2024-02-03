@@ -1,9 +1,15 @@
-import discord.errors
 from discord.ext import commands
-import settings
+import discord.errors
+
+from cogs import gambling
 from models.account import Account
+import settings
 
 logger = settings.logging.getLogger('bot')
+
+
+async def setup(bot):
+    await bot.add_cog(Dev(bot))
 
 
 class Dev(commands.Cog):
@@ -14,6 +20,9 @@ class Dev(commands.Cog):
     def cleanup_timers(cog_instance):
         if hasattr(cog_instance, "check_work_timers") and cog_instance.check_work_timers.is_running():
             cog_instance.check_work_timers.cancel()
+
+        if hasattr(cog_instance, "refresh_daily") and cog_instance.refresh_daily.is_running():
+            cog_instance.refresh_daily.cancel()
 
     async def validate_user_id(self, ctx, user_id):
         try:
@@ -81,15 +90,17 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def deposit(self, ctx, amount, mention="<@350393195085168650>"):
+    async def gameshark(self, ctx, amount, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not self.validate_user_id(ctx, user_id):
+        if not await self.validate_user_id(ctx, user_id):
             await ctx.send("Invalid user_id")
             return
 
         account = Account.fetch(user_id)
         account.balance += float(amount)
         account.save()
+
+        await ctx.send("Successful Gamesharking!")
 
     @commands.command(aliases=['cdb'])
     @commands.is_owner()
@@ -99,6 +110,13 @@ class Dev(commands.Cog):
         await ctx.send("This function broke as hell atm!")
         # await ctx.send("Data Cleaning Complete!")
 
+    @commands.command()
+    @commands.is_owner()
+    async def gpsa(self, ctx, mention="<@350393195085168650>"):
+        user_id = mention[2:-1]
+        if not await self.validate_user_id(ctx, user_id):
+            await ctx.send("Invalid user_id")
+            return
 
-async def setup(bot):
-    await bot.add_cog(Dev(bot))
+        user = await self.bot.fetch_user(user_id)
+        await gambling.Gambling.send_gambling_psa(user)

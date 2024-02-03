@@ -1,12 +1,11 @@
-import datetime
-
 import discord
-import random
 from discord.ext import commands, tasks
 import settings
 from models.account import Account
-import asyncio
 import graphics
+import datetime
+import random
+import asyncio
 
 logger = settings.logging.getLogger('econ')
 
@@ -181,88 +180,6 @@ class Economy(commands.Cog):
         account.save()
         await ctx.send("Today's gift of $50 has been added to your account!")
 
-    @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
-    @commands.cooldown(1, 9, commands.BucketType.user)
-    async def deal_with_the_devil(self, ctx, choice: int, amount: float):
-        embed = discord.Embed(
-            colour=discord.Colour.dark_red(),
-            title="A Deal with the Devil",
-            description="Ahh...\n"
-        )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
-        msg = await ctx.send(embed=embed)
-        await asyncio.sleep(1)
-        embed.description += "Come to make a deal with the devil have we?\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(2)
-        if amount <= 0:
-            embed.description += f"You must put some skin in the game muchacho\n\n" \
-                                 f"[Use !help dwtd]"
-            await msg.edit(embed=embed)
-            return
-
-        if choice < 1 or choice > 6:
-            embed.description += "It's a roll of the die my friend, pick a number between 1 and 6 next time\n\n"
-            await msg.edit(embed=embed)
-            return
-
-        account = Account.fetch(ctx.message.author.id)
-        if amount > account.balance:
-            embed.description += "Tried to put one past me eh?\n\n"
-            await msg.edit(embed=embed)
-            await asyncio.sleep(2)
-            embed.description += "WELL YOU CANT BET MORE THAN YOU HAVE!!\n\n"
-            await msg.edit(embed=embed)
-            return
-
-        die = random.randint(1, 6)
-        embed.description += f"You say {choice}, ey?\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(3)
-        embed.description += f"The die reads {die}\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(2)
-        if choice == die:
-            await self.deposit(account, amount * 6.953)
-            embed.description += f"It seems Madame Luck is in your throes tonight. You won ${amount * 6.953:.2f}\n\n"
-            embed.colour = discord.Colour.gold()
-            await msg.edit(embed=embed)
-        else:
-            await self.deposit(account, -amount)
-            embed.description += f"It seems you lack what it takes to dance with the devil in " \
-                                 f"the pale moonlight.\n\n"
-            await msg.edit(embed=embed)
-            await asyncio.sleep(2)
-            embed.description += f"Don't worry, I'll make good use of that ${amount:.2f}\n\n"
-            await msg.edit(embed=embed)
-
-        await asyncio.sleep(3)
-        embed.description += f"I hope to see another deal is in our future"
-        await msg.edit(embed=embed)
-
-    @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
-    @commands.cooldown(1, 2.5, commands.BucketType.user)
-    async def coin(self, ctx, choice: str, amount: float):
-        if amount <= 0:
-            await ctx.send("You cannot 0 or fewer Burger Bucks")
-            return
-
-        account = Account.fetch(ctx.message.author.id)
-        if amount > account.balance:
-            await ctx.send("You don't have enough Burger Bucks")
-            return
-
-        choice = choice.lower()[0]
-        if choice not in "ht":
-            await ctx.send("Invalid choice, please select either heads or tails")
-            return
-
-        heads = random.randint(0, 1)
-        if (heads and choice == "t") or (not heads and choice == "h"):
-            amount = -amount  # User lost coin flip, they will be given the negative amount they bet
-        await self.deposit(account, amount)
-        await ctx.send("You Won!!" if amount > 0 else "You Lost!!")
-
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
@@ -290,8 +207,14 @@ class Economy(commands.Cog):
     async def refresh_daily(self):
         query = Account.update(has_redeemed_daily=False)
         query.execute()
+        query = Account.update(daily_allocated_bets=200)
+        query.execute
         logger.info("DAILY'S REFRESHED!")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):
+        await self.bot.wait_until_ready()
+
+    @refresh_daily.before_loop
+    async def refresh_daily(self):
         await self.bot.wait_until_ready()
