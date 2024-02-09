@@ -21,7 +21,7 @@ class Account(peewee.Model):
     @staticmethod
     def fetch(user_id: str):
         account, is_created = Account.get_or_create(user_id=user_id, defaults={
-            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 200
+            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150
         })
         return account
 

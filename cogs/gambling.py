@@ -2,6 +2,8 @@ import random
 
 import discord
 from discord.ext import commands, tasks
+
+import helper
 from models.account import Account
 import asyncio
 
@@ -51,75 +53,54 @@ class Gambling(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.dark_red(),
             title="A Deal with the Devil",
-            description="Ahh...\n"
+            description=""
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
         msg = await ctx.send(embed=embed)
 
-        await asyncio.sleep(1)
-        embed.description += "Come to make a deal with the devil have we?\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(2)
+        await helper.embed_edit(embed, msg, f"Ahh...\n", sleep=2)
+        await helper.embed_edit(embed, msg, "Come to make a deal with the devil have we?\n\n", sleep=2)
 
         if amount <= 0:
-            embed.description += f"You must put some skin in the game muchacho\n\n" \
-                                 f"[Use !help dwtd]"
-            embed.colour = discord.Colour.darker_gray()
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, f"You must put some skin in the game muchacho\n\n[Use !help dwtd]",
+                                    color=discord.Colour.darker_gray())
             return
 
         if choice < 1 or choice > 6:
-            embed.description += "It's a roll of the die my friend, pick a number between 1 and 6 next time\n\n"
-            embed.colour = discord.Colour.darker_gray()
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, "It's a roll of the die my friend, pick a number between 1 and 6 next time\n\n",
+                                    color=discord.Colour.darker_gray())
             return
 
         if account.daily_allocated_bets <= 0:
-            embed.description += "No more gambling for you today.\n\n"
-            embed.colour = discord.Colour.darker_gray()
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, "No more gambling for you today.\n\n",
+                                    color=discord.Colour.darker_gray())
             return
 
         if amount > account.balance:
-            embed.description += "Tried to put one past me eh?\n\n"
-            await msg.edit(embed=embed)
-            await asyncio.sleep(2)
-            embed.description += "WELL YOU CANT BET MORE THAN YOU HAVE!!\n\n"
-            embed.colour = discord.Colour.darker_gray()
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, "Tried to put one past me eh?\n\n", sleep=2)
+            await helper.embed_edit(embed, msg, "WELL YOU CANT BET MORE THAN YOU HAVE!!\n\n",
+                                    color=discord.Colour.darker_gray())
             return
 
+        await helper.embed_edit(embed, msg, f"You say {choice}, ey?\n\n", sleep=3)
         die = random.randint(1, 6)
-        embed.description += f"You say {choice}, ey?\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(3)
-
-        embed.description += f"The die reads {die}\n\n"
-        await msg.edit(embed=embed)
-        await asyncio.sleep(2)
+        await helper.embed_edit(embed, msg, f"The die reads {die}\n\n", sleep=2)
 
         if choice == die:
             await self.deposit(account, amount * 6.953)
-            embed.description += f"It seems Madame Luck is in your throes tonight. You won ${amount * 6.953:.2f}\n\n"
-            embed.colour = discord.Colour.gold()
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, f"It seems Madame Luck is in your throes tonight. You won ${amount * 6.953:.2f}\n\n",
+                                    color=discord.Colour.gold(), sleep=2)
         else:
             await self.deposit(account, -amount)
-            embed.description += f"It seems you lack what it takes to dance with the devil in " \
-                                 f"the pale moonlight.\n\n"
-            await msg.edit(embed=embed)
-            await asyncio.sleep(2)
-            embed.description += f"Don't worry, I'll make good use of that ${amount:.2f}\n\n"
-            await msg.edit(embed=embed)
+            await helper.embed_edit(embed, msg, f"It seems you lack what it takes to dance with the devil in the pale moonlight.\n\n", sleep=2)
+            await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${amount:.2f}\n\n", sleep=2)
+
+        await helper.embed_edit(embed, msg, f"I hope to see another deal is in our future")
 
         account.daily_allocated_bets -= 1
         account.save()
         if account.daily_allocated_bets <= 0:
             await self.send_gambling_psa(ctx.author)
-
-        await asyncio.sleep(3)
-        embed.description += f"I hope to see another deal is in our future"
-        await msg.edit(embed=embed)
 
     @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
     @commands.cooldown(1, 4, commands.BucketType.user)
@@ -168,11 +149,6 @@ class Gambling(commands.Cog):
             amount = -amount  # User lost coin flip, they will be given the negative amount they bet
         await self.deposit(account, amount)
 
-        account.daily_allocated_bets -= 1
-        account.save()
-        if account.daily_allocated_bets <= 0:
-            await self.send_gambling_psa(ctx.author)
-
         if amount > 0:
             embed.description += f"Congratulations, you won ${amount:.2f}"
             embed.colour = discord.Colour.green()
@@ -181,3 +157,8 @@ class Gambling(commands.Cog):
             embed.description += f"I'll be keeping that ${-amount:.2f}"
             embed.colour = discord.Colour.red()
             await msg.edit(embed=embed)
+
+        account.daily_allocated_bets -= 1
+        account.save()
+        if account.daily_allocated_bets <= 0:
+            await self.send_gambling_psa(ctx.author)

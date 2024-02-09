@@ -1,4 +1,24 @@
+import asyncio
+
+import discord
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
+
+
+# async def append_edit_sleep(embed, msg, append: str, time: int = 0):
+#     embed.description += append
+#     await msg.edit(embed=embed)
+#     await asyncio.sleep(time)
+
+
+async def embed_edit(embed, msg, append: str, sleep: int = 0, color: discord.Colour = None):
+    if color:
+        embed.colour = color
+
+    embed.description += append
+    await msg.edit(embed=embed)
+
+    if sleep > 0:
+        await asyncio.sleep(sleep)
 
 
 def create_progress_bar(percent: float):

@@ -2,9 +2,8 @@ import discord
 from discord.ext import commands, tasks
 import settings
 from models.account import Account
-import graphics
+import helper
 import datetime
-import random
 import asyncio
 
 logger = settings.logging.getLogger('econ')
@@ -28,6 +27,7 @@ class Economy(commands.Cog):
         self.bot = bot
         self.jobs = {"Unemployed": 0, "Dishwasher": 7.25, "Burger Flipper": 13.50}
         self.check_work_timers.start()
+        self.refresh_daily.start()
 
     ## HELPER METHODS
     @staticmethod
@@ -103,7 +103,7 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(help="Usage: !work [Shift Duration (hours)]")
-    async def work(self, ctx, num_hours: int = 0):
+    async def work(self, ctx, num_hours=0):
         user_id = ctx.author.id
         account = Account.fetch(user_id)
         num_hours = int(num_hours)
@@ -112,7 +112,7 @@ class Economy(commands.Cog):
             elapsed_seconds = (asyncio.get_event_loop().time() - account.shift_start)
             elapsed_time, e_units = await convert_time(elapsed_seconds, "seconds")
             percent_left = ((elapsed_seconds / 3600) / account.shift_length) * 100
-            graphics.create_progress_bar(percent_left)
+            helper.create_progress_bar(percent_left)
 
             embed = discord.Embed(
                 title=f"Your shift is {percent_left:.2f}% complete",
@@ -159,7 +159,7 @@ class Economy(commands.Cog):
             await ctx.send(f"Checking performance...")
             await asyncio.sleep(2)
             if account.balance > 750:
-                account.job_title = "Dishwasher"
+                account.job_title = "Burger Flipper"
                 account.save()
                 await ctx.send(f"Congratulations! You've been promoted to the title of Burger Flipper. "
                                f"Your new salary will be: {self.jobs['Burger Flipper']:.2f} an hour!")
@@ -190,7 +190,7 @@ class Economy(commands.Cog):
             elapsed_hours = (current_time - account.shift_start) / 3600
             # logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
 
-            if elapsed_hours >= account.shift_length:
+            if elapsed_hours >= account.shift_length or elapsed_hours < 0:
                 money_earned = round(account.shift_length * self.jobs[account.job_title], 2)
                 user = await self.bot.fetch_user(account.user_id)
                 await self.deposit(account, money_earned)
@@ -199,22 +199,17 @@ class Economy(commands.Cog):
                 account.shift_length = None
                 account.save()
 
-        # logger.info(f"-----------------------------------")
-
-    new_day = datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc)
-
-    @tasks.loop(time=new_day)
+    @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))
     async def refresh_daily(self):
-        query = Account.update(has_redeemed_daily=False)
+        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
         query.execute()
-        query = Account.update(daily_allocated_bets=200)
-        query.execute
-        logger.info("DAILY'S REFRESHED!")
+        logger.info("Daily Refresh Executed")
+        logger.info(f"-----------------------------------")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):
         await self.bot.wait_until_ready()
 
     @refresh_daily.before_loop
-    async def refresh_daily(self):
+    async def before_refresh_daily(self):
         await self.bot.wait_until_ready()

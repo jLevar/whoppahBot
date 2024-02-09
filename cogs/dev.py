@@ -120,3 +120,21 @@ class Dev(commands.Cog):
 
         user = await self.bot.fetch_user(user_id)
         await gambling.Gambling.send_gambling_psa(user)
+
+    @commands.command()
+    @commands.is_owner()
+    async def sdabtn(self, ctx, n):
+        account = Account.fetch(ctx.author.id)
+        account.daily_allocated_bets = n
+        account.save()
+        await ctx.send("succesfully sdabtn'd")
+
+    @commands.command()
+    @commands.is_owner()
+    async def zabidoobak(self, ctx):
+        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
+        query.execute()
+        logger.info("DAILY'S REFRESHED! zabidoobak tho")
+        await ctx.send("succesfully zabidoobak'd")
+
+
