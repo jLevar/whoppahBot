@@ -21,7 +21,8 @@ async def embed_edit(embed, msg, append: str, sleep: int = 0, color: discord.Col
         await asyncio.sleep(sleep)
 
 
-def create_progress_bar(percent: float):
+def create_progress_bar_img(percent: float):
+
     def draw_progress_bar(d, x, y, w, h, progress, bg="#001A4D", fg="#4DA6FF"):
         # draw background
         d.ellipse((x+w, y, x+h+w, y+h), fill=bg)

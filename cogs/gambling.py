@@ -47,7 +47,7 @@ class Gambling(commands.Cog):
 
     ## COMMANDS
     @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
-    @commands.cooldown(1, 9, commands.BucketType.user)
+    @commands.cooldown(1, 8, commands.BucketType.user)
     async def deal_with_the_devil(self, ctx, choice: int, amount: float):
         account = Account.fetch(ctx.message.author.id)
         embed = discord.Embed(
@@ -58,7 +58,7 @@ class Gambling(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
         msg = await ctx.send(embed=embed)
 
-        await helper.embed_edit(embed, msg, f"Ahh...\n", sleep=2)
+        await helper.embed_edit(embed, msg, f"Ahh...\n", sleep=1)
         await helper.embed_edit(embed, msg, "Come to make a deal with the devil have we?\n\n", sleep=2)
 
         if amount <= 0:
@@ -86,6 +86,7 @@ class Gambling(commands.Cog):
         die = random.randint(1, 6)
         await helper.embed_edit(embed, msg, f"The die reads {die}\n\n", sleep=2)
 
+        account = Account.fetch(ctx.message.author.id)  # Refreshes the account to avoid money glitch??
         if choice == die:
             await self.deposit(account, amount * 6.953)
             await helper.embed_edit(embed, msg, f"It seems Madame Luck is in your throes tonight. You won ${amount * 6.953:.2f}\n\n",

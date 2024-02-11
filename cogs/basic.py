@@ -14,7 +14,7 @@ async def setup(bot):
 class Basic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.eleven_eleven.start()
+        # self.eleven_eleven.start()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -57,10 +57,10 @@ class Basic(commands.Cog):
     async def joined(self, ctx, who: discord.Member):
         await ctx.send(who.joined_at)
 
-    @tasks.loop(time=[datetime.time(hour=6, minute=11), datetime.time(hour=18, minute=11)])
-    async def eleven_eleven(self):
-        await discord.Client().get_channel(1087798954525200384).send("11:11!")
-        logger.info("Just elevened all over the place!")
+    # @tasks.loop(time=[datetime.time(hour=6, minute=11), datetime.time(hour=18, minute=11)])
+    # async def eleven_eleven(self):
+    #     await discord.Client().get_channel(1087798954525200384).send("11:11!")
+    #     logger.info("Just elevened all over the place!")
 
     @commands.command()
     async def test(self, ctx):

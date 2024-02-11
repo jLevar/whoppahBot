@@ -34,9 +34,11 @@ def run():
         if isinstance(error, commands.errors.NotOwner):
             await ctx.send("Error: Invalid Permissions!")
         if isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"Cooldown expires in {error.retry_after:.2f}s")
+            await ctx.send(f"Cooldown expires in {error.retry_after:.3f}s")
         if isinstance(error, commands.CommandNotFound):
             await ctx.send(f"Error: Unknown Command!")
+        if isinstance(error, commands.errors.BadArgument):
+            await ctx.send(f"Error: Invalid Argument Type")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 

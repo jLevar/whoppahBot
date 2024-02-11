@@ -28,6 +28,7 @@ class Economy(commands.Cog):
         self.jobs = {"Unemployed": 0, "Dishwasher": 7.25, "Burger Flipper": 13.50}
         self.check_work_timers.start()
         self.refresh_daily.start()
+        self.daily_locked_users = []
 
     ## HELPER METHODS
     @staticmethod
@@ -102,27 +103,26 @@ class Economy(commands.Cog):
         embed.set_author(name=f"{ctx.author}", icon_url=ctx.author.avatar.url)
         await ctx.send(embed=embed)
 
-    @commands.command(help="Usage: !work [Shift Duration (hours)]")
-    async def work(self, ctx, num_hours=0):
+    @commands.command(aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
+    async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = Account.fetch(user_id)
-        num_hours = int(num_hours)
 
         if account.shift_start is not None:
-            elapsed_seconds = (asyncio.get_event_loop().time() - account.shift_start)
+            elapsed_seconds = (datetime.datetime.utcnow() - account.shift_start) / datetime.timedelta(seconds=1)
+
             elapsed_time, e_units = await convert_time(elapsed_seconds, "seconds")
-            percent_left = ((elapsed_seconds / 3600) / account.shift_length) * 100
-            helper.create_progress_bar(percent_left)
+            percent_left = ((elapsed_seconds / 3600) / account.shift_length)
 
+            blank_bar = "# [----------------]"
+            progress_bar = blank_bar.replace("-", "#", int(blank_bar.count("-") * percent_left))
             embed = discord.Embed(
-                title=f"Your shift is {percent_left:.2f}% complete",
+                title=f"Your shift is {(percent_left*100):.2f}% complete",
                 colour=discord.Colour.blue(),
-                description=f"You started your {account.shift_length} hour shift {elapsed_time:.2f} {e_units} ago"
+                description=f"You started your {account.shift_length} hour shift {elapsed_time:.2f} {e_units} ago\n"
+                            f"{progress_bar}"
             )
-
-            file = discord.File(f"{settings.IMGS_DIR}/progress.png", filename="progress.png")
-            embed.set_image(url="attachment://progress.png")
-            await ctx.send(file=file, embed=embed)
+            await ctx.send(embed=embed)
             return
 
         if account.job_title == "Unemployed":
@@ -137,7 +137,7 @@ class Economy(commands.Cog):
             await ctx.send("You cannot work more than 24 hours in a single shift!")
             return
 
-        account.shift_start = asyncio.get_event_loop().time()
+        account.shift_start = datetime.datetime.utcnow()
         account.shift_length = num_hours
         account.save()
         await ctx.send("You started working!")
@@ -183,18 +183,21 @@ class Economy(commands.Cog):
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
-        current_time = asyncio.get_event_loop().time()
-        logger.info(f"Current Time = {current_time}")
+        current_time = datetime.datetime.utcnow()
+        logger.info(f"Current Time (UTC) = {current_time}")
 
         for account in Account.select().where(Account.shift_start.is_null(False)):
-            elapsed_hours = (current_time - account.shift_start) / 3600
-            # logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+            elapsed_time = (current_time - account.shift_start)
+            elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
 
-            if elapsed_hours >= account.shift_length or elapsed_hours < 0:
-                money_earned = round(account.shift_length * self.jobs[account.job_title], 2)
+            logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+
+            if elapsed_hours >= account.shift_length:
+                money_earned = account.shift_length * self.jobs[account.job_title]
                 user = await self.bot.fetch_user(account.user_id)
                 await self.deposit(account, money_earned)
                 await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
+
                 account.shift_start = None
                 account.shift_length = None
                 account.save()
@@ -203,6 +206,13 @@ class Economy(commands.Cog):
     async def refresh_daily(self):
         query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
         query.execute()
+
+        # No daily's for these users!
+        for user_id in self.daily_locked_users:
+            account = Account.select().where(Account.user_id == user_id)
+            account.has_redeemed_daily = True
+            account.save()
+
         logger.info("Daily Refresh Executed")
         logger.info(f"-----------------------------------")
 
