@@ -36,7 +36,7 @@ class Account(peewee.Model):
 
     @staticmethod
     def update_acct(user_id=None, account=None, **kwargs):
-        expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily', 'daily_allocated_bets', 'dab_delta']
+        expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily', 'daily_allocated_bets', 'daily_allocated_bets_delta']
         acct = account or Account.fetch(user_id=user_id)
 
         for key, value in kwargs.items():
