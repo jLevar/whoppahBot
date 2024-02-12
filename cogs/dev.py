@@ -106,6 +106,19 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def changelog(self, ctx):
+        with open(settings.CHANGELOG_PATH, 'r') as file:
+            text = file.read().split("\n", 1)
+
+        embed = discord.Embed(
+            colour=discord.Colour.blurple(),
+            title=f"{text[0]}",
+            description=f"{text[1]}"
+        )
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.is_owner()
     # Set my daily allocated bets to N
     async def smdabtn(self, ctx, n):
         Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)

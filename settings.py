@@ -14,7 +14,7 @@ CMDS_DIR = BASE_DIR / "cmds"
 
 COGS_DIR = BASE_DIR / "cogs"
 
-IMGS_DIR = BASE_DIR / "imgs"
+CHANGELOG_PATH = BASE_DIR / "changelog.txt"
 
 LOGGING_CONFIG = {
     "version": 1,
