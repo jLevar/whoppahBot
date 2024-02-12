@@ -1,0 +1,7 @@
+Version 1.0.1
+
+Changes:
+- Work progress bar is now text based instead of image based for computational efficiency.
+- Deal with the Devil payout has decreased from 6.9x to 6.1x
+- Balance is now presented in embed form
+- Both !balance and !profile now allow you to mention other users

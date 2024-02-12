@@ -18,11 +18,6 @@ class Gambling(commands.Cog):
 
     ## HELPER METHODS
     @staticmethod
-    async def deposit(account, amount):
-        account.balance += amount
-        account.save()
-
-    @staticmethod
     async def send_gambling_psa(user):
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
@@ -87,19 +82,19 @@ class Gambling(commands.Cog):
         await helper.embed_edit(embed, msg, f"The die reads {die}\n\n", sleep=2)
 
         account = Account.fetch(ctx.message.author.id)  # Refreshes the account to avoid money glitch??
+
         if choice == die:
-            await self.deposit(account, amount * 6.953)
-            await helper.embed_edit(embed, msg, f"It seems Madame Luck is in your throes tonight. You won ${amount * 6.953:.2f}\n\n",
+            amount = amount * 6.12
+            await helper.embed_edit(embed, msg, f"It seems Madame Luck is in your throes tonight. You won ${amount:.2f}\n\n",
                                     color=discord.Colour.gold(), sleep=2)
         else:
-            await self.deposit(account, -amount)
+            amount = -amount
             await helper.embed_edit(embed, msg, f"It seems you lack what it takes to dance with the devil in the pale moonlight.\n\n", sleep=2)
-            await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${amount:.2f}\n\n", sleep=2)
+            await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${-amount:.2f}\n\n", sleep=2)
 
+        Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
         await helper.embed_edit(embed, msg, f"I hope to see another deal is in our future")
 
-        account.daily_allocated_bets -= 1
-        account.save()
         if account.daily_allocated_bets <= 0:
             await self.send_gambling_psa(ctx.author)
 
@@ -148,7 +143,8 @@ class Gambling(commands.Cog):
 
         if (heads and choice == "t") or (not heads and choice == "h"):
             amount = -amount  # User lost coin flip, they will be given the negative amount they bet
-        await self.deposit(account, amount)
+
+        Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
 
         if amount > 0:
             embed.description += f"Congratulations, you won ${amount:.2f}"
@@ -159,7 +155,5 @@ class Gambling(commands.Cog):
             embed.colour = discord.Colour.red()
             await msg.edit(embed=embed)
 
-        account.daily_allocated_bets -= 1
-        account.save()
         if account.daily_allocated_bets <= 0:
             await self.send_gambling_psa(ctx.author)

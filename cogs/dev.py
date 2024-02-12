@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord.errors
 
+import helper
 from cogs import gambling
 from models.account import Account
 import settings
@@ -24,13 +25,6 @@ class Dev(commands.Cog):
         if hasattr(cog_instance, "refresh_daily") and cog_instance.refresh_daily.is_running():
             cog_instance.refresh_daily.cancel()
 
-    async def validate_user_id(self, ctx, user_id):
-        try:
-            await self.bot.fetch_user(user_id)
-        except discord.errors.HTTPException as e:
-            await ctx.send(f"{type(e)}\nError: Invalid Mention")
-            return False
-        return True
 
     @commands.command()
     @commands.is_owner()
@@ -90,31 +84,20 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def gameshark(self, ctx, amount, mention="<@350393195085168650>"):
+    async def gameshark(self, ctx, amount: float, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not await self.validate_user_id(ctx, user_id):
+        if not await helper.validate_user_id(self.bot, ctx, user_id):
             await ctx.send("Invalid user_id")
             return
 
-        account = Account.fetch(user_id)
-        account.balance += float(amount)
-        account.save()
-
+        Account.update_acct(user_id=user_id, balance_delta=amount)
         await ctx.send("Successful Gamesharking!")
-
-    @commands.command(aliases=['cdb'])
-    @commands.is_owner()
-    async def clean_database(self, ctx):
-        # for user in Account.select().where(Account.user_id << 3503931950851686501):
-        #     await ctx.send(f"{user.user_id}")
-        await ctx.send("This function broke as hell atm!")
-        # await ctx.send("Data Cleaning Complete!")
 
     @commands.command()
     @commands.is_owner()
     async def gpsa(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not await self.validate_user_id(ctx, user_id):
+        if not await helper.validate_user_id(self.bot, ctx, user_id):
             await ctx.send("Invalid user_id")
             return
 
@@ -123,18 +106,9 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def sdabtn(self, ctx, n):
-        account = Account.fetch(ctx.author.id)
-        account.daily_allocated_bets = n
-        account.save()
-        await ctx.send("succesfully sdabtn'd")
-
-    @commands.command()
-    @commands.is_owner()
-    async def zabidoobak(self, ctx):
-        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
-        query.execute()
-        logger.info("DAILY'S REFRESHED! zabidoobak tho")
-        await ctx.send("succesfully zabidoobak'd")
+    # Set my daily allocated bets to N
+    async def smdabtn(self, ctx, n):
+        Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
+        await ctx.send("successfully smdabtn'd")
 
 
