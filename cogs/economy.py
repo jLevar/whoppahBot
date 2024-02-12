@@ -167,7 +167,7 @@ class Economy(commands.Cog):
                 await ctx.send(f"Sorry, but we will not be moving forward with your promotion at this time.")
                 await ctx.send(f"(hint: you need $750 in the bank to get the next job)")
             return
-        elif account.job_title == "Grill Master":
+        elif account.job_title == "Burger Flipper":
             await ctx.send(f"Checking performance...")
             await asyncio.sleep(2)
             if account.balance > 5000:
