@@ -111,6 +111,18 @@ class Economy(commands.Cog):
         user_id = ctx.author.id
         account = Account.fetch(user_id)
 
+        if account.job_title == "Unemployed":
+            await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
+            return
+
+        if num_hours < 1:
+            await ctx.send("You have to work at least 1 hour to get paid!")
+            return
+
+        if num_hours > 24:
+            await ctx.send("You cannot work more than 24 hours in a single shift!")
+            return
+
         if account.shift_start is not None:
             elapsed_seconds = (datetime.datetime.utcnow() - account.shift_start) / datetime.timedelta(seconds=1)
 
@@ -126,18 +138,6 @@ class Economy(commands.Cog):
                             f"{progress_bar}"
             )
             await ctx.send(embed=embed)
-            return
-
-        if account.job_title == "Unemployed":
-            await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
-            return
-
-        if num_hours < 1:
-            await ctx.send("You have to work at least 1 hour to get paid!")
-            return
-
-        if num_hours > 24:
-            await ctx.send("You cannot work more than 24 hours in a single shift!")
             return
 
         Account.update_acct(account=account, shift_start=datetime.datetime.utcnow(), shift_length=num_hours)

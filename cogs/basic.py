@@ -18,22 +18,8 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if random.randint(0, 30) == 0:
+        if random.randint(0, 42) == 23:
             await message.add_reaction("😂")
-
-    @commands.command()
-    async def hello(self, ctx, *, member: discord.Member):
-        await ctx.send(f"Hello {member.name}")
-
-    @commands.command(
-        aliases=['pang'],
-        help="To use ping, simply type !ping or !p",
-        description="When pinged, the bot will respond with a pong",
-        brief="Responds with pong",
-        enabled=True
-    )
-    async def ping(self, ctx):
-        await ctx.send("pong")
 
     @commands.command()
     async def joke(self, ctx):
@@ -51,38 +37,35 @@ class Basic(commands.Cog):
                 error_message = f.read()
             await ctx.message.author.send(error_message)
         else:
-            await ctx.send(" ".join(what))
+            await ctx.send(f"> {' '.join(what)}\n-{ctx.message.author}")
+
+    @tasks.loop(time=datetime.time(hour=18, minute=11))
+    async def eleven_eleven(self):
+        await discord.Client().get_channel(1087798954525200384).send("11:11!")
+        logger.info("Just elevened all over the place!")
 
     @commands.command()
-    async def joined(self, ctx, who: discord.Member):
-        await ctx.send(who.joined_at)
-
-    # @tasks.loop(time=[datetime.time(hour=6, minute=11), datetime.time(hour=18, minute=11)])
-    # async def eleven_eleven(self):
-    #     await discord.Client().get_channel(1087798954525200384).send("11:11!")
-    #     logger.info("Just elevened all over the place!")
-
-    @commands.command()
-    async def test(self, ctx):
-        client = discord.Client()
-        channel = client.get_channel(1145891925778513951)
-        await channel.send("TEST")
-
-    @commands.command()
-    async def snail(self, ctx):
-        author = ctx.author
+    async def github(self, ctx):
         embed = discord.Embed(
-            colour=discord.Colour.dark_green(),
-            description="Race to the finish line in this nail biting game of coordination and sabatoge!",
-            title="Snail Speedway",
-            url="http://snailspeedway.click"
+            colour=discord.Colour.orange(),
+            title="Link to Project GitHub",
+            url="https://github.com/jLevar/whoppahBot"
         )
-        embed.set_footer(text=f"Requested by {author}", icon_url=author.avatar.url)
-        embed.set_author(name="Sir John W. Whoppah")
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['mb'])
-    async def mention_battle(self, ctx, mention):
-        await ctx.send(f"You pinged user_id: {mention[2:-1]}")
-        await ctx.send(f"Get pinged! {ctx.author.mention}")
+    @commands.command()
+    async def bug(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.purple(),
+            title="Experienced a bug or technical issue?",
+            description="Please fill out this form to get it resolved as quickly as possible",
+            url="https://forms.gle/jwEGTjM11jDakSQA7"
+        )
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+
+        await ctx.send(embed=embed)
+
+
+

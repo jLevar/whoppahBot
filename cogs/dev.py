@@ -25,7 +25,6 @@ class Dev(commands.Cog):
         if hasattr(cog_instance, "refresh_daily") and cog_instance.refresh_daily.is_running():
             cog_instance.refresh_daily.cancel()
 
-
     @commands.command()
     @commands.is_owner()
     async def load(self, ctx, cog: str):
@@ -78,8 +77,13 @@ class Dev(commands.Cog):
     ## ECONOMY
     @commands.command()
     @commands.is_owner()
-    async def close_account(self, ctx):
-        Account.close_account(ctx)
+    async def close_account(self, ctx, mention="<@350393195085168650>"):
+        user_id = mention[2:-1]
+        if not await helper.validate_user_id(self.bot, ctx, user_id):
+            await ctx.send("Invalid user_id")
+            return
+
+        Account.close_account(ctx.message.author.id)
         await ctx.send("Account Closed!")
 
     @commands.command()
@@ -95,7 +99,7 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def gpsa(self, ctx, mention="<@350393195085168650>"):
+    async def gambling_psa(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
         if not await helper.validate_user_id(self.bot, ctx, user_id):
             await ctx.send("Invalid user_id")

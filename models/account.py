@@ -30,8 +30,8 @@ class Account(peewee.Model):
         return [user.user_id for user in Account.select().order_by(-Account.balance)][:num_users]
 
     @staticmethod
-    def close_account(ctx):
-        acct = Account.get(user_id=ctx.message.author.id)
+    def close_account(user_id: str):
+        acct = Account.get(user_id=user_id)
         acct.delete_instance()
 
     @staticmethod

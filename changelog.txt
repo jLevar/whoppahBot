@@ -1,8 +1,8 @@
-Version 1.0.1
+Version 1.0.2
 
 Changes:
-- Work progress bar is now text based instead of image based for computational efficiency
-- Payout from Deal with the Devil has decreased from 6.9x to 6.1x
-- Balance is now presented in embed form
-- Both !balance and !profile now allow you to mention other users
-- Added a new Grill Master job you can obtain
+- Removed extraneous commands including:
+  - slap, math, hello, ping, joined, test, mention_battle, and snail
+- Added commands the following commands:
+  - !github: Sends link to this project's GitHub repository
+  - !bug: Sends link to a bug report form
