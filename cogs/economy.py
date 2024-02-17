@@ -106,13 +106,37 @@ class Economy(commands.Cog):
 
         await ctx.send("Transfer complete!")
 
-    @commands.command(aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
+    @commands.group(invoke_without_command=True, aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
     async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = Account.fetch(user_id)
 
         if account.job_title == "Unemployed":
             await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
+            return
+
+        if account.shift_start is not None:
+            elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
+            elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
+            percent_left = (elapsed_hours / account.shift_length)
+
+            if percent_left > 100:
+                await self.pop_work_timer(account, elapsed_time)
+                await ctx.send("Your shift's up!")
+                return
+
+            blank_bar = "# [----------------]"
+            progress_bar = blank_bar.replace("-", "#", int(blank_bar.count("-") * percent_left))
+            elapsed_seconds = elapsed_time / datetime.timedelta(seconds=1)
+            et, eu = await convert_time(elapsed_seconds, "seconds")
+
+            embed = discord.Embed(
+                title=f"Your shift is {(percent_left * 100):.2f}% complete",
+                colour=discord.Colour.blue(),
+                description=f"You started your {account.shift_length} hour shift {et:.2f} {eu} ago\n"
+                            f"{progress_bar}"
+            )
+            await ctx.send(embed=embed)
             return
 
         if num_hours < 1:
@@ -123,26 +147,23 @@ class Economy(commands.Cog):
             await ctx.send("You cannot work more than 24 hours in a single shift!")
             return
 
-        if account.shift_start is not None:
-            elapsed_seconds = (datetime.datetime.utcnow() - account.shift_start) / datetime.timedelta(seconds=1)
-
-            elapsed_time, e_units = await convert_time(elapsed_seconds, "seconds")
-            percent_left = ((elapsed_seconds / 3600) / account.shift_length)
-
-            blank_bar = "# [----------------]"
-            progress_bar = blank_bar.replace("-", "#", int(blank_bar.count("-") * percent_left))
-            embed = discord.Embed(
-                title=f"Your shift is {(percent_left * 100):.2f}% complete",
-                colour=discord.Colour.blue(),
-                description=f"You started your {account.shift_length} hour shift {elapsed_time:.2f} {e_units} ago\n"
-                            f"{progress_bar}"
-            )
-            await ctx.send(embed=embed)
-            return
-
         Account.update_acct(account=account, shift_start=datetime.datetime.utcnow(), shift_length=num_hours)
 
         await ctx.send("You started working!")
+
+    @work.command()
+    async def cancel(self, ctx):
+        await ctx.send("Cancelling your shift...")
+        user_id = ctx.author.id
+        account = Account.fetch(user_id)
+
+        if not account.shift_start:
+            await ctx.send("You weren't working to begin with fool!")
+            return
+
+        elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
+        await self.pop_work_timer(account, elapsed_time)
+        await ctx.send("Work cancel successful!")
 
     @commands.command()
     async def promotion(self, ctx):
@@ -182,22 +203,29 @@ class Economy(commands.Cog):
         await ctx.send("Sorry, but there is no openings for you at this time.")
         await ctx.send("(which for the record means you have the best job currently in the game)")
 
+    ## HELPER METHODS
+    async def pop_work_timer(self, account, elapsed_time):
+        user = await self.bot.fetch_user(account.user_id)
+        elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
+
+        if elapsed_time / datetime.timedelta(minutes=1) < 1:
+            return
+
+        money_earned = elapsed_hours * self.jobs[account.job_title]
+        Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
+
+        await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
+
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
         current_time = datetime.datetime.utcnow()
-
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_time = (current_time - account.shift_start)
             elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
-
             # logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
-
             if elapsed_hours >= account.shift_length:
-                money_earned = account.shift_length * self.jobs[account.job_title]
-                user = await self.bot.fetch_user(account.user_id)
-                Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
-                await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
+                await self.pop_work_timer(account, elapsed_time)
 
     @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))
     async def refresh_daily(self):
@@ -218,3 +246,5 @@ class Economy(commands.Cog):
     @refresh_daily.before_loop
     async def before_refresh_daily(self):
         await self.bot.wait_until_ready()
+
+

@@ -123,6 +123,12 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def manual_daily_reset(self, ctx):
+        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
+        query.execute()
+
+    @commands.command()
+    @commands.is_owner()
     # Set my daily allocated bets to N
     async def smdabtn(self, ctx, n):
         Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)

@@ -1,8 +1,4 @@
-Version 1.0.2
+Version 1.0.3 (unreleased)
 
 Changes:
-- Removed extraneous commands including:
-  - slap, math, hello, ping, joined, test, mention_battle, and snail
-- Added commands the following commands:
-  - !github: Sends link to this project's GitHub repository
-  - !bug: Sends link to a bug report form
+- Added new subcommand: '!work cancel' which will cancel your shift and pay out immediately!
