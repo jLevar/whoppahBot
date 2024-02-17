@@ -1,4 +1,5 @@
 Version 1.0.3 (unreleased)
 
 Changes:
-- Added new subcommand: '!work cancel' which will cancel your shift and pay out immediately!
+- Added new subcommand: `!work cancel` which will cancel your shift and pay out immediately!
+- New command: `!whoppah` sends the infamous 'did u get a whoppa?' gif
