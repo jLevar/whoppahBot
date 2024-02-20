@@ -26,9 +26,9 @@ class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.jobs = {"Unemployed": 0, "Dishwasher": 7.25, "Burger Flipper": 13.50, "Grill Master": 16.75}
+        self.daily_locked_users = []
         self.check_work_timers.start()
         self.refresh_daily.start()
-        self.daily_locked_users = []
 
     ## COMMANDS
     @commands.command(aliases=['bal', 'b'])
@@ -89,20 +89,26 @@ class Economy(commands.Cog):
     @commands.command(aliases=['t'])
     async def transfer(self, ctx, amount: float, mention):
         if amount <= 0:
-            await ctx.send("nice try buckaroo, but you can't send negative money 😂😂😂")
+            await ctx.send("Sorry, you have to send more than $0")
             return
 
-        user_account = Account.fetch(ctx.author.id)
-        if user_account.balance < amount:
-            await ctx.send("you ain't got the money you broke bastard 😂😂😂")
+        sender = Account.fetch(ctx.author.id)
+        receiver = Account.fetch(mention[2:-1])
+
+        if sender == receiver:
+            await ctx.send("You cannot transfer money to self")
             return
 
-        if not await helper.validate_user_id(self.bot, ctx, mention[2:-1]):
-            await ctx.send("i ain't sending no money to that fake user 😂😂😂")
+        if sender.balance < amount:
+            await ctx.send("Insufficient Funds")
             return
 
-        Account.update_acct(user_id=mention[2:-1], balance_delta=amount)
-        Account.update_acct(account=user_account, balance_delta=-amount)
+        if not await helper.validate_user_id(self.bot, ctx, receiver):
+            await ctx.send("Recipient Unknown")
+            return
+
+        Account.update_acct(account=receiver, balance_delta=amount)
+        Account.update_acct(account=sender, balance_delta=-amount)
 
         await ctx.send("Transfer complete!")
 

@@ -41,7 +41,7 @@ class Basic(commands.Cog):
 
     @tasks.loop(time=datetime.time(hour=18, minute=11))
     async def eleven_eleven(self):
-        drumbledwarf = await self.bot.fetch_user("<@350393195085168650>")
+        drumbledwarf = await self.bot.fetch_user("350393195085168650")
         await drumbledwarf.send("11:11!")
         logger.info("11:11!")
 
@@ -68,8 +68,8 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def whoppah(self, ctx):
+    @commands.command(aliases=['whoppah'])
+    async def whoppa(self, ctx):
         await ctx.send("https://tenor.com/view/whoppa-whoppah-did-you-get-a-whoppa-woppa-whopper-gif-23161878")
 
 

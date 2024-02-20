@@ -7,8 +7,7 @@ from PIL import Image, ImageDraw
 async def validate_user_id(bot, ctx, user_id):
     try:
         await bot.fetch_user(user_id)
-    except discord.errors.HTTPException as e:
-        await ctx.send(f"{type(e)}\nError: Invalid Mention")
+    except discord.errors.HTTPException:
         return False
     return True
 
