@@ -79,12 +79,22 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def daily(self, ctx):
+        embed = discord.Embed(
+            color=discord.Colour.light_grey(),
+            title="Daily Gift Redemption",
+            description="",
+        )
+        msg = await ctx.send(embed=embed)
+
         account = Account.fetch(ctx.author.id)
+
         if account.has_redeemed_daily:
-            await ctx.send("You have already redeemed your daily gift. Try again tomorrow.")
-            return
-        Account.update_acct(account=account, balance_delta=50, has_redeemed_daily=1)
-        await ctx.send("Today's gift of $50 has been added to your account!")
+            await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.", sleep=1)
+        else:
+            Account.update_acct(account=account, balance_delta=50, has_redeemed_daily=1)
+            await helper.embed_edit(embed, msg, append="Today's gift of $50 has been added to your account!", color=discord.Colour.brand_green(), sleep=1)
+
+        await helper.embed_edit(embed, msg, footer="Refreshes at 0:00 MST")
 
     @commands.command(aliases=['t'])
     async def transfer(self, ctx, amount: float, mention):
@@ -233,7 +243,7 @@ class Economy(commands.Cog):
             if elapsed_hours >= account.shift_length:
                 await self.pop_work_timer(account, elapsed_time)
 
-    @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))  # 0:00 MST
     async def refresh_daily(self):
         query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
         query.execute()

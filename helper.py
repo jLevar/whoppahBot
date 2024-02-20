@@ -12,11 +12,16 @@ async def validate_user_id(bot, ctx, user_id):
     return True
 
 
-async def embed_edit(embed, msg, append: str, sleep: int = 0, color: discord.Colour = None):
+async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
     if color:
         embed.colour = color
 
-    embed.description += append
+    if footer:
+        embed.set_footer(text=footer)
+
+    if append:
+        embed.description += append
+
     await msg.edit(embed=embed)
 
     if sleep > 0:

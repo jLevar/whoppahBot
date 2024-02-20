@@ -121,11 +121,16 @@ class Dev(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["mdr"])
     @commands.is_owner()
-    async def manual_daily_reset(self, ctx):
-        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
-        query.execute()
+    async def manual_daily_reset(self, ctx, flag: str):
+        if flag == "-m":
+            Account.update_acct(user_id=ctx.author.id, has_redeemed_daily=False)
+            await ctx.send("Your daily has been reset")
+        else:
+            query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
+            query.execute()
+            await ctx.send("Everyone's daily has been reset")
 
     @commands.command()
     @commands.is_owner()
