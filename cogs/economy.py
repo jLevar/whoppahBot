@@ -89,13 +89,28 @@ class Economy(commands.Cog):
         account = Account.fetch(ctx.author.id)
 
         if account.has_redeemed_daily:
-            await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.", sleep=1)
+            await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.\n", sleep=1)
         else:
-            Account.update_acct(account=account, balance_delta=50, has_redeemed_daily=1, daily_streak_delta=1)
-            await helper.embed_edit(embed, msg, append="Today's gift of $50 has been added to your account!", color=discord.Colour.brand_green(), sleep=1)
+            daily_streak = account.daily_streak + 1
+            daily_gift = self.daily_ladder(daily_streak)
+            Account.update_acct(account=account, balance_delta=daily_gift, has_redeemed_daily=1, daily_streak_delta=1)
+            await helper.embed_edit(embed, msg, append=f"Today's gift of ${daily_gift} has been added to your account!\n\n", color=discord.Colour.brand_green(), sleep=1)
 
-        await helper.embed_edit(embed, msg, append=f"\n\nCurrent Active Streak: {account.daily_streak}", sleep=1)
+            daily_ladder_chart = ""
+            for i in range(daily_streak, daily_streak+7):
+                if i == daily_streak:
+                    daily_ladder_chart += f"**Day {i}:\t${self.daily_ladder(i)}**\t*(Today)*\n"
+                else:
+                    daily_ladder_chart += f"Day {i}:\t${self.daily_ladder(i)}\n"
+
+            await helper.embed_edit(embed, msg, append=daily_ladder_chart, sleep=1)
+
+        await helper.embed_edit(embed, msg, append=f"\nCurrent Active Streak: {account.daily_streak}", sleep=1)
         await helper.embed_edit(embed, msg, footer="Refreshes at 0:00 MST")
+
+    @staticmethod
+    def daily_ladder(day: int):
+        return (((day - 1) % 7) * day) + 50
 
     @commands.command(aliases=['t'])
     async def transfer(self, ctx, amount: float, mention):
