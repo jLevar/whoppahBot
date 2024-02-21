@@ -3,6 +3,7 @@ Version 1.0.3 (unreleased)
 Changes:
 - Added new subcommand: `!work cancel` which will cancel your shift and pay out immediately!
 - New command: `!whoppa` sends the infamous 'did u get a whoppa?' gif
+- Added embed format for !daily
 
 Bug Fixes:
 - Transferring money to self no longer deletes money.

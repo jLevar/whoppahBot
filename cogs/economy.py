@@ -91,9 +91,10 @@ class Economy(commands.Cog):
         if account.has_redeemed_daily:
             await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.", sleep=1)
         else:
-            Account.update_acct(account=account, balance_delta=50, has_redeemed_daily=1)
+            Account.update_acct(account=account, balance_delta=50, has_redeemed_daily=1, daily_streak_delta=1)
             await helper.embed_edit(embed, msg, append="Today's gift of $50 has been added to your account!", color=discord.Colour.brand_green(), sleep=1)
 
+        await helper.embed_edit(embed, msg, append=f"\n\nCurrent Active Streak: {account.daily_streak}", sleep=1)
         await helper.embed_edit(embed, msg, footer="Refreshes at 0:00 MST")
 
     @commands.command(aliases=['t'])
@@ -245,12 +246,11 @@ class Economy(commands.Cog):
 
     @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))  # 0:00 MST
     async def refresh_daily(self):
-        query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
-        query.execute()
-
-        # No daily's for these users!
-        for user_id in self.daily_locked_users:
-            Account.update_acct(user_id=user_id, has_redeemed_daily=True)
+        for person in Account.select(Account.user_id, Account.has_redeemed_daily):
+            if person.has_redeemed_daily:
+                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
+            else:
+                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175, daily_streak=0)
 
         logger.info("Daily Refresh Executed")
         logger.info(f"-----------------------------------")

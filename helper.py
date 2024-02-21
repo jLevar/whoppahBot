@@ -1,7 +1,5 @@
 import asyncio
-
 import discord
-from PIL import Image, ImageDraw
 
 
 async def validate_user_id(bot, ctx, user_id):

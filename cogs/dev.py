@@ -88,13 +88,31 @@ class Dev(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def gameshark(self, ctx, amount: float, mention="<@350393195085168650>"):
+    async def change_data(self, ctx, flag: str = None, data=None, mention: str = "<@350393195085168650>"):
         user_id = mention[2:-1]
+
+        if not data:
+            await ctx.send("Invalid data argument")
+            return
+
+        if flag not in ["-b", "-ds"]:
+            await ctx.send("Invalid flag")
+            return
+
         if not await helper.validate_user_id(self.bot, ctx, user_id):
             await ctx.send("Invalid user_id")
             return
 
-        Account.update_acct(user_id=user_id, balance_delta=amount)
+        if flag == "-b":
+            data = int(data)
+            Account.update_acct(user_id=user_id, balance_delta=data)
+        elif flag == "-ds":
+            data = int(data)
+            Account.update_acct(user_id=user_id, daily_streak=data)
+        else:
+            await ctx.send("This block should be unreachable")
+            return
+
         await ctx.send("Successful Gamesharking!")
 
     @commands.command()
@@ -123,13 +141,17 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=["mdr"])
     @commands.is_owner()
-    async def manual_daily_reset(self, ctx, flag: str):
+    async def manual_daily_reset(self, ctx, flag: str = None):
         if flag == "-m":
             Account.update_acct(user_id=ctx.author.id, has_redeemed_daily=False)
             await ctx.send("Your daily has been reset")
         else:
-            query = Account.update(has_redeemed_daily=False, daily_allocated_bets=175)
-            query.execute()
+            for person in Account.select(Account.user_id, Account.has_redeemed_daily):
+                if person.has_redeemed_daily:
+                    Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
+                else:
+                    Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
+                                        daily_streak=0)
             await ctx.send("Everyone's daily has been reset")
 
     @commands.command()

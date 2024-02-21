@@ -14,6 +14,7 @@ class Account(peewee.Model):
     shift_length: int = peewee.IntegerField()
     has_redeemed_daily: bool = peewee.BooleanField()
     daily_allocated_bets: int = peewee.IntegerField()
+    daily_streak: int = peewee.IntegerField()
 
     class Meta:
         database = accounts_db
@@ -21,7 +22,7 @@ class Account(peewee.Model):
     @staticmethod
     def fetch(user_id: str):
         account, is_created = Account.get_or_create(user_id=user_id, defaults={
-            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150
+            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150, "daily_streak": 0
         })
         return account
 
@@ -36,7 +37,8 @@ class Account(peewee.Model):
 
     @staticmethod
     def update_acct(user_id=None, account=None, **kwargs):
-        expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily', 'daily_allocated_bets', 'daily_allocated_bets_delta']
+        expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily',
+                         'daily_allocated_bets', 'daily_allocated_bets_delta', 'daily_streak', 'daily_streak_delta']
         acct = account or Account.fetch(user_id=user_id)
 
         for key, value in kwargs.items():
