@@ -97,7 +97,8 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg, append=f"Today's gift of ${daily_gift} has been added to your account!\n\n", color=discord.Colour.brand_green(), sleep=1)
 
             daily_ladder_chart = ""
-            for i in range(daily_streak, daily_streak+7):
+            start_day = (((daily_streak-1) // 7) * 7) + 1
+            for i in range(start_day, start_day+7):
                 if i == daily_streak:
                     daily_ladder_chart += f"**Day {i}:\t${self.daily_ladder(i)}**\t*(Today)*\n"
                 else:

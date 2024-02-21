@@ -86,7 +86,7 @@ class Dev(commands.Cog):
         Account.close_account(ctx.message.author.id)
         await ctx.send("Account Closed!")
 
-    @commands.command()
+    @commands.command(aliases=['cd'])
     @commands.is_owner()
     async def change_data(self, ctx, flag: str = None, data=None, mention: str = "<@350393195085168650>"):
         user_id = mention[2:-1]
