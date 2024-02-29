@@ -1,7 +1,7 @@
 import os
 import pathlib
-import logging
 from logging.config import dictConfig
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,19 +39,29 @@ LOGGING_CONFIG = {
             "class": "logging.StreamHandler",
             "formatter": "standard",
         },
-        "file": {
+        "discordFile": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "logs/infos.log",
+            "filename": "logs/discord.log",
+            "mode": "w",
+            "formatter": "verbose",
+        },
+        "botFile": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "logs/bot.log",
             "mode": "w",
             "formatter": "verbose",
         },
     },
     "loggers": {
-        "bot": {"handlers": ["consoleDebug"], "level": "INFO", "propagate": False},
-        "econ": {"handlers": ["consoleDebugVerbose"], "level": "INFO", "propagate": False},
+        "bot": {
+            "handlers": ["consoleDebug", "botFile"],
+            "level": "INFO",
+            "propagate": False
+        },
         "discord": {
-            "handlers": ["consoleWarning", "file"],
+            "handlers": ["consoleWarning", "discordFile"],
             "level": "INFO",
             "propagate": False,
         },

@@ -7,7 +7,7 @@ import helper
 import settings
 from models.account import Account
 
-logger = settings.logging.getLogger('econ')
+logger = settings.logging.getLogger('bot')
 
 
 async def convert_time(time, units="seconds"):
@@ -260,7 +260,7 @@ class Economy(commands.Cog):
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_time = (current_time - account.shift_start)
             elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
-            # logger.info(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+            # logger.debug(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
             if elapsed_hours >= account.shift_length:
                 await self.pop_work_timer(account, elapsed_time)
 
@@ -273,8 +273,7 @@ class Economy(commands.Cog):
                 Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
                                     daily_streak=0)
 
-        logger.info("Daily Refresh Executed")
-        logger.info(f"-----------------------------------")
+        logger.info("Daily Refresh Executed\n-----------------------------------")
 
     @check_work_timers.before_loop
     async def before_check_work_timers(self):

@@ -48,11 +48,22 @@ class Basic(commands.Cog):
         logger.info("11:11!")
 
     @commands.command()
+    async def suggestion(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.purple(),
+            title="Have a suggestion for a new feature or change?",
+            description="Fill out this form to let us know!\nhttps://forms.gle/hE3A4Neiia3njCJV7"
+        )
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
     async def github(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.orange(),
-            title="Link to Project GitHub",
-            url="https://github.com/jLevar/whoppahBot"
+            title="Curious about how Whoppah Bot works?",
+            description="It's all open source on GitHub!\nhttps://github.com/jLevar/whoppahBot"
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
@@ -61,10 +72,9 @@ class Basic(commands.Cog):
     @commands.command()
     async def bug(self, ctx):
         embed = discord.Embed(
-            colour=discord.Colour.purple(),
+            colour=discord.Colour.dark_purple(),
             title="Experienced a bug or technical issue?",
-            description="Please fill out this form to get it resolved as quickly as possible",
-            url="https://forms.gle/jwEGTjM11jDakSQA7"
+            description="Fill out this form to get it resolved as quickly as possible!\nhttps://forms.gle/jwEGTjM11jDakSQA7"
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
