@@ -1,10 +1,11 @@
+import datetime
+
 import discord
 from discord.ext import commands, tasks
+
+import helper
 import settings
 from models.account import Account
-import helper
-import datetime
-import asyncio
 
 logger = settings.logging.getLogger('econ')
 
@@ -25,7 +26,11 @@ class Economy(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.jobs = {"Unemployed": 0, "Dishwasher": 7.25, "Burger Flipper": 13.50, "Grill Master": 16.75}
+        self.jobs = {"Unemployed": {"salary": 0, "requirements": 0},
+                     "Dishwasher": {"salary": 7.25, "requirements": 0},
+                     "Burger Flipper": {"salary": 13.50, "requirements": 750},
+                     "Grill Master": {"salary": 16.75, "requirements": 5000}
+                     }
         self.daily_locked_users = []
         self.check_work_timers.start()
         self.refresh_daily.start()
@@ -94,11 +99,13 @@ class Economy(commands.Cog):
             daily_streak = account.daily_streak + 1
             daily_gift = self.daily_ladder(daily_streak)
             Account.update_acct(account=account, balance_delta=daily_gift, has_redeemed_daily=1, daily_streak_delta=1)
-            await helper.embed_edit(embed, msg, append=f"Today's gift of ${daily_gift} has been added to your account!\n\n", color=discord.Colour.brand_green(), sleep=1)
+            await helper.embed_edit(embed, msg,
+                                    append=f"Today's gift of ${daily_gift} has been added to your account!\n\n",
+                                    color=discord.Colour.brand_green(), sleep=1)
 
             daily_ladder_chart = ""
-            start_day = (((daily_streak-1) // 7) * 7) + 1
-            for i in range(start_day, start_day+7):
+            start_day = (((daily_streak - 1) // 7) * 7) + 1
+            for i in range(start_day, start_day + 7):
                 if i == daily_streak:
                     daily_ladder_chart += f"**Day {i}:\t${self.daily_ladder(i)}**\t*(Today)*\n"
                 else:
@@ -201,40 +208,37 @@ class Economy(commands.Cog):
     @commands.command()
     async def promotion(self, ctx):
         account = Account.fetch(ctx.author.id)
-        await ctx.send(f"Promotion Request Received...")
-        await asyncio.sleep(3)
-        if account.job_title == "Unemployed":
-            await ctx.send(f"Checking qualifications...")
-            await asyncio.sleep(2)
-            account.update_acct(account=account, job_title="Dishwasher")
-            await ctx.send(f"Congratulations! You've been accepted to join the Burger King crew as a Dishwasher. "
-                           f"Your starting salary will be: {self.jobs['Dishwasher']:.2f} an hour!")
-            return
-        elif account.job_title == "Dishwasher":
-            await ctx.send(f"Checking performance...")
-            await asyncio.sleep(2)
-            if account.balance > 750:
-                account.update_acct(account=account, job_title="Burger Flipper")
-                await ctx.send(f"Congratulations! You've been promoted to the title of Burger Flipper. "
-                               f"Your new salary will be: {self.jobs['Burger Flipper']:.2f} an hour!")
-            else:
-                await ctx.send(f"Sorry, but we will not be moving forward with your promotion at this time.")
-                await ctx.send(f"(hint: you need $750 in the bank to get the next job)")
-            return
-        elif account.job_title == "Burger Flipper":
-            await ctx.send(f"Checking performance...")
-            await asyncio.sleep(2)
-            if account.balance > 5000:
-                account.update_acct(account=account, job_title="Grill Master")
-                await ctx.send(f"Congratulations! You've been promoted to the title of Grill Master. "
-                               f"Your new salary will be: {self.jobs['Grill Master']:.2f} an hour!")
-            else:
-                await ctx.send(f"Sorry, but we will not be moving forward with your promotion at this time.")
-                await ctx.send(f"(hint: you need $5000 in the bank to get the next job)")
+        embed = discord.Embed(
+            colour=discord.Colour.blue(),
+            title="Promotion Request",
+            description=""
+        )
+        msg = await ctx.send(embed=embed)
+
+        await helper.embed_edit(embed, msg, append="Promotion Request Received...\n\n", sleep=3)
+        await helper.embed_edit(embed, msg, append="Checking qualifications...\n\n", sleep=2)
+
+        jobs_list = [*self.jobs, "MAX"]
+        next_job = jobs_list[jobs_list.index(account.job_title) + 1]
+
+        if next_job == "MAX":
+            await helper.embed_edit(embed, msg, append="Sorry, but there is no opening for you at this time.", sleep=2)
+            await helper.embed_edit(embed, msg, footer="Note: You have the best job currently in the game")
             return
 
-        await ctx.send("Sorry, but there is no openings for you at this time.")
-        await ctx.send("(which for the record means you have the best job currently in the game)")
+        if account.balance >= self.jobs[next_job]["requirements"]:
+            account.update_acct(account=account, job_title=next_job)
+            await helper.embed_edit(embed, msg,
+                                    append=f"Congratulations! Your job title is now: {next_job}\n\n",
+                                    sleep=2)
+            await helper.embed_edit(embed, msg,
+                                    append=f"Your salary is now: {self.jobs[next_job]['salary']:.2f} an hour!\n\n")
+        else:
+            await helper.embed_edit(embed, msg,
+                                    append="Sorry, but we will not be moving forward with your promotion at this time.",
+                                    sleep=2)
+            await helper.embed_edit(embed, msg,
+                                    footer=f"Hint: you need ${self.jobs[next_job]['requirements']} to get the next job")
 
     ## HELPER METHODS
     async def pop_work_timer(self, account, elapsed_time):
@@ -244,7 +248,7 @@ class Economy(commands.Cog):
         if elapsed_time / datetime.timedelta(minutes=1) < 1:
             return
 
-        money_earned = elapsed_hours * self.jobs[account.job_title]
+        money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
         Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
 
         await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
@@ -266,7 +270,8 @@ class Economy(commands.Cog):
             if person.has_redeemed_daily:
                 Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
             else:
-                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175, daily_streak=0)
+                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
+                                    daily_streak=0)
 
         logger.info("Daily Refresh Executed")
         logger.info(f"-----------------------------------")
@@ -278,5 +283,3 @@ class Economy(commands.Cog):
     @refresh_daily.before_loop
     async def before_refresh_daily(self):
         await self.bot.wait_until_ready()
-
-

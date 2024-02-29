@@ -1,10 +1,10 @@
-from discord.ext import commands
 import discord.errors
+from discord.ext import commands
 
 import helper
+import settings
 from cogs import gambling
 from models.account import Account
-import settings
 
 logger = settings.logging.getLogger('bot')
 
@@ -95,7 +95,7 @@ class Dev(commands.Cog):
             await ctx.send("Invalid data argument")
             return
 
-        if flag not in ["-b", "-ds"]:
+        if flag not in ["-b", "-ds", "-jt"]:
             await ctx.send("Invalid flag")
             return
 
@@ -109,6 +109,9 @@ class Dev(commands.Cog):
         elif flag == "-ds":
             data = int(data)
             Account.update_acct(user_id=user_id, daily_streak=data)
+        elif flag == "-jt":
+            data = "Unemployed" if data == "0" else str(data)
+            Account.update_acct(user_id=user_id, job_title=data)
         else:
             await ctx.send("This block should be unreachable")
             return
@@ -160,5 +163,3 @@ class Dev(commands.Cog):
     async def smdabtn(self, ctx, n):
         Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")
-
-

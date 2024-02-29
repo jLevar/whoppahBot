@@ -62,7 +62,8 @@ class Gambling(commands.Cog):
             return
 
         if choice < 1 or choice > 6:
-            await helper.embed_edit(embed, msg, "It's a roll of the die my friend, pick a number between 1 and 6 next time\n\n",
+            await helper.embed_edit(embed, msg,
+                                    "It's a roll of the die my friend, pick a number between 1 and 6 next time\n\n",
                                     color=discord.Colour.darker_gray())
             return
 
@@ -85,11 +86,14 @@ class Gambling(commands.Cog):
 
         if choice == die:
             amount = amount * 6.12
-            await helper.embed_edit(embed, msg, f"It seems Madame Luck is in your throes tonight. You won ${amount:.2f}\n\n",
+            await helper.embed_edit(embed, msg,
+                                    f"It seems Madame Luck is in your throes tonight. You won ${amount:.2f}\n\n",
                                     color=discord.Colour.gold(), sleep=2)
         else:
             amount = -amount
-            await helper.embed_edit(embed, msg, f"It seems you lack what it takes to dance with the devil in the pale moonlight.\n\n", sleep=2)
+            await helper.embed_edit(embed, msg,
+                                    f"It seems you lack what it takes to dance with the devil in the pale moonlight.\n\n",
+                                    sleep=2)
             await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${-amount:.2f}\n\n", sleep=2)
 
         Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)

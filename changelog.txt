@@ -1,13 +1,4 @@
-Version 1.0.3
+Version 1.0.4
 Changes:
-- Added new subcommand: `!work cancel` which will cancel your shift and pay out immediately!
-- New command: `!whoppa` sends the infamous 'did u get a whoppa?' gif
-- Huge !daily update:
+- Huge !promotion update:
   - Now in embed format
-  - Daily streak keeps track of how many consecutive days you've redeemed !daily
-  - Gift now scales so the longer the streak the more money you'll get
-    - Running the numbers, a 365 streak will make you about $209,000 more than if you redeemed every other day
-    - https://www.desmos.com/calculator/5pprrkxpf2
-
-Bug Fixes:
-- Transferring money to self no longer deletes money.
