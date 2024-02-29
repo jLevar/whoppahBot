@@ -1,7 +1,9 @@
+import datetime
+import random
+
 import discord
 from discord.ext import commands, tasks
-import random
-import datetime
+
 import settings
 
 logger = settings.logging.getLogger("bot")
@@ -72,5 +74,6 @@ class Basic(commands.Cog):
     async def whoppa(self, ctx):
         await ctx.send("https://tenor.com/view/whoppa-whoppah-did-you-get-a-whoppa-woppa-whopper-gif-23161878")
 
-
-
+    @commands.command()
+    async def tutorial(self, ctx):
+        await ctx.send("This command gives users a starting tutorial!")

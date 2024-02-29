@@ -1,8 +1,9 @@
-import settings
 import discord
 from discord.ext import commands
-from models.account import accounts_db
+
+import settings
 from models.account import Account
+from models.account import accounts_db
 
 logger = settings.logging.getLogger("bot")
 
@@ -22,6 +23,7 @@ def run():
         for cog_file in settings.COGS_DIR.glob("*.py"):
             if cog_file.name != "__init__.py":
                 await bot.load_extension(f"cogs.{cog_file.name[:-3]}")
+        await bot.change_presence(activity=discord.Game('!tutorial'))
 
     @bot.event
     async def on_command_error(ctx, error):
@@ -42,4 +44,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
