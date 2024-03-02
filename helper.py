@@ -27,12 +27,16 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
 
 
 class TrackerButton(discord.ui.Button):
-    def __init__(self, label=None, emoji=None, style=None):
+    def __init__(self, embed, field_index=None, label=None, emoji=None, style=None):
         super().__init__(label=label, emoji=emoji, style=style)
-        self.tracker = 0
+
+        self.embed = embed
+        self.field_index = field_index
+
+        self.tracker_name = self.embed.fields[self.field_index].name
+        self.tracker_value = 0
 
     async def callback(self, interaction):
-        self.tracker += 1
-        embed = interaction.message.embeds[0]
-        embed.description = embed.description[:embed.description.index("\u200b") + 1] + f"{self.tracker}"
-        await interaction.response.edit_message(embed=embed)
+        self.tracker_value += 1
+        self.embed.set_field_at(index=self.field_index, name=self.tracker_name, value=self.tracker_value)
+        await interaction.response.edit_message(embed=self.embed)

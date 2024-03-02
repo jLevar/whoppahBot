@@ -133,11 +133,12 @@ class Basic(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.from_rgb(98, 52, 18),
             title="Cookie Clicker",
-            description="Cookies Clicked: \u200b0"
         )
 
+        embed.add_field(name="Cookies Clicked:", value=0)
+
         buttons = [
-            helper.TrackerButton(emoji="🍪", style=discord.ButtonStyle.gray),
+            helper.TrackerButton(embed=embed, emoji="🍪", style=discord.ButtonStyle.gray, tracker_field=0),
         ]
 
         view = discord.ui.View()
