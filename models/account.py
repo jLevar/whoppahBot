@@ -20,23 +20,24 @@ class Account(peewee.Model):
         database = accounts_db
 
     @staticmethod
-    def fetch(user_id: str):
+    async def fetch(user_id: str):
         account, is_created = Account.get_or_create(user_id=user_id, defaults={
-            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150, "daily_streak": 0
+            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150,
+            "daily_streak": 0
         })
         return account
 
     @staticmethod
-    def leaderboard(num_users: int):
+    async def leaderboard(num_users: int):
         return [user.user_id for user in Account.select().order_by(-Account.balance)][:num_users]
 
     @staticmethod
-    def close_account(user_id: str):
+    async def close_account(user_id: str):
         acct = Account.get(user_id=user_id)
         acct.delete_instance()
 
     @staticmethod
-    def update_acct(user_id=None, account=None, **kwargs):
+    async def update_acct(user_id=None, account=None, **kwargs):
         expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily',
                          'daily_allocated_bets', 'daily_allocated_bets_delta', 'daily_streak', 'daily_streak_delta']
         acct = account or Account.fetch(user_id=user_id)

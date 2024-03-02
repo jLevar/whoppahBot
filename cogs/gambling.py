@@ -44,7 +44,7 @@ class Gambling(commands.Cog):
     @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
     @commands.cooldown(1, 8, commands.BucketType.user)
     async def deal_with_the_devil(self, ctx, choice: int, amount: float):
-        account = Account.fetch(ctx.message.author.id)
+        account = await Account.fetch(ctx.message.author.id)
         embed = discord.Embed(
             colour=discord.Colour.dark_red(),
             title="A Deal with the Devil",
@@ -82,7 +82,7 @@ class Gambling(commands.Cog):
         die = random.randint(1, 6)
         await helper.embed_edit(embed, msg, f"The die reads {die}\n\n", sleep=2)
 
-        account = Account.fetch(ctx.message.author.id)  # Refreshes the account to avoid money glitch??
+        account = await Account.fetch(ctx.message.author.id)  # Refreshes the account to avoid money glitch??
 
         if choice == die:
             amount = amount * 6.12
@@ -96,7 +96,7 @@ class Gambling(commands.Cog):
                                     sleep=2)
             await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${-amount:.2f}\n\n", sleep=2)
 
-        Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
+        await Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
         await helper.embed_edit(embed, msg, f"I hope to see another deal is in our future")
 
         if account.daily_allocated_bets <= 0:
@@ -105,7 +105,7 @@ class Gambling(commands.Cog):
     @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
     @commands.cooldown(1, 4, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
-        account = Account.fetch(ctx.message.author.id)
+        account = await Account.fetch(ctx.message.author.id)
         embed = discord.Embed(
             colour=discord.Colour.light_grey(),
             title="A Flip of the Coin",
@@ -148,7 +148,7 @@ class Gambling(commands.Cog):
         if (heads and choice == "t") or (not heads and choice == "h"):
             amount = -amount  # User lost coin flip, they will be given the negative amount they bet
 
-        Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
+        await Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
 
         if amount > 0:
             embed.description += f"Congratulations, you won ${amount:.2f}"

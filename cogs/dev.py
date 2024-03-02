@@ -83,8 +83,8 @@ class Dev(commands.Cog):
             await ctx.send("Invalid user_id")
             return
 
-        Account.close_account(ctx.message.author.id)
-        await ctx.send("Account Closed!")
+        await Account.close_account(ctx.message.author.id)
+        await ctx.send("await Account Closed!")
 
     @commands.command(aliases=['cd'])
     @commands.is_owner()
@@ -105,13 +105,13 @@ class Dev(commands.Cog):
 
         if flag == "-b":
             data = int(data)
-            Account.update_acct(user_id=user_id, balance_delta=data)
+            await Account.update_acct(user_id=user_id, balance_delta=data)
         elif flag == "-ds":
             data = int(data)
-            Account.update_acct(user_id=user_id, daily_streak=data)
+            await Account.update_acct(user_id=user_id, daily_streak=data)
         elif flag == "-jt":
             data = "Unemployed" if data == "0" else str(data)
-            Account.update_acct(user_id=user_id, job_title=data)
+            await Account.update_acct(user_id=user_id, job_title=data)
         else:
             await ctx.send("This block should be unreachable")
             return
@@ -146,20 +146,22 @@ class Dev(commands.Cog):
     @commands.is_owner()
     async def manual_daily_reset(self, ctx, flag: str = None):
         if flag == "-m":
-            Account.update_acct(user_id=ctx.author.id, has_redeemed_daily=False)
+            await Account.update_acct(user_id=ctx.author.id, has_redeemed_daily=False)
             await ctx.send("Your daily has been reset")
         else:
-            for person in Account.select(Account.user_id, Account.has_redeemed_daily):
+            for person in await Account.select(await Account.user_id, await Account.has_redeemed_daily):
                 if person.has_redeemed_daily:
-                    Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
+                    await Account.update_acct(user_id=person.user_id, has_redeemed_daily=False,
+                                              daily_allocated_bets=175)
                 else:
-                    Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
-                                        daily_streak=0)
+                    await Account.update_acct(user_id=person.user_id, has_redeemed_daily=False,
+                                              daily_allocated_bets=175,
+                                              daily_streak=0)
             await ctx.send("Everyone's daily has been reset")
 
     @commands.command()
     @commands.is_owner()
     # Set my daily allocated bets to N
     async def smdabtn(self, ctx, n):
-        Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
+        await Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")

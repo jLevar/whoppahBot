@@ -2,3 +2,4 @@ Version 1.0.4
 Changes:
 - Huge !promotion update:
   - Now in embed format
+- Added !suggestion

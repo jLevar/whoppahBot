@@ -39,7 +39,7 @@ class Economy(commands.Cog):
     @commands.command(aliases=['bal', 'b'])
     async def balance(self, ctx, mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
-        account = Account.fetch(user_id)
+        account = await Account.fetch(user_id)
         user = await self.bot.fetch_user(user_id)
 
         embed = discord.Embed(
@@ -53,7 +53,7 @@ class Economy(commands.Cog):
     @commands.command(aliases=['p'])
     async def profile(self, ctx, mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
-        account = Account.fetch(user_id)
+        account = await Account.fetch(user_id)
         user = await self.bot.fetch_user(user_id)
 
         embed = discord.Embed(
@@ -73,9 +73,9 @@ class Economy(commands.Cog):
             description=""
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
-        for i, user_id in enumerate(Account.leaderboard(10)):
+        for i, user_id in enumerate(await Account.leaderboard(10)):
             user = await self.bot.fetch_user(user_id)
-            account = Account.fetch(user_id)
+            account = await Account.fetch(user_id)
             if user.id == ctx.author.id:
                 embed.description += f"**{i + 1} |\t{user.name} -- ${account.balance:.2f}**\n"
             else:
@@ -91,14 +91,15 @@ class Economy(commands.Cog):
         )
         msg = await ctx.send(embed=embed)
 
-        account = Account.fetch(ctx.author.id)
+        account = await Account.fetch(ctx.author.id)
 
         if account.has_redeemed_daily:
             await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.\n", sleep=1)
         else:
             daily_streak = account.daily_streak + 1
             daily_gift = self.daily_ladder(daily_streak)
-            Account.update_acct(account=account, balance_delta=daily_gift, has_redeemed_daily=1, daily_streak_delta=1)
+            await Account.update_acct(account=account, balance_delta=daily_gift, has_redeemed_daily=1,
+                                      daily_streak_delta=1)
             await helper.embed_edit(embed, msg,
                                     append=f"Today's gift of ${daily_gift} has been added to your account!\n\n",
                                     color=discord.Colour.brand_green(), sleep=1)
@@ -121,13 +122,14 @@ class Economy(commands.Cog):
         return (((day - 1) % 7) * day) + 50
 
     @commands.command(aliases=['t'])
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def transfer(self, ctx, amount: float, mention):
         if amount <= 0:
             await ctx.send("Sorry, you have to send more than $0")
             return
 
-        sender = Account.fetch(ctx.author.id)
-        receiver = Account.fetch(mention[2:-1])
+        sender = await Account.fetch(ctx.author.id)
+        receiver = await Account.fetch(mention[2:-1])
 
         if sender == receiver:
             await ctx.send("You cannot transfer money to self")
@@ -141,15 +143,15 @@ class Economy(commands.Cog):
             await ctx.send("Recipient Unknown")
             return
 
-        Account.update_acct(account=receiver, balance_delta=amount)
-        Account.update_acct(account=sender, balance_delta=-amount)
+        await Account.update_acct(account=receiver, balance_delta=amount)
+        await Account.update_acct(account=sender, balance_delta=-amount)
 
         await ctx.send("Transfer complete!")
 
     @commands.group(invoke_without_command=True, aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
     async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
-        account = Account.fetch(user_id)
+        account = await Account.fetch(user_id)
 
         if account.job_title == "Unemployed":
             await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
@@ -187,7 +189,7 @@ class Economy(commands.Cog):
             await ctx.send("You cannot work more than 24 hours in a single shift!")
             return
 
-        Account.update_acct(account=account, shift_start=datetime.datetime.utcnow(), shift_length=num_hours)
+        await Account.update_acct(account=account, shift_start=datetime.datetime.utcnow(), shift_length=num_hours)
 
         await ctx.send("You started working!")
 
@@ -195,7 +197,7 @@ class Economy(commands.Cog):
     async def cancel(self, ctx):
         await ctx.send("Cancelling your shift...")
         user_id = ctx.author.id
-        account = Account.fetch(user_id)
+        account = await Account.fetch(user_id)
 
         if not account.shift_start:
             await ctx.send("You weren't working to begin with fool!")
@@ -207,7 +209,7 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def promotion(self, ctx):
-        account = Account.fetch(ctx.author.id)
+        account = await Account.fetch(ctx.author.id)
         embed = discord.Embed(
             colour=discord.Colour.blue(),
             title="Promotion Request",
@@ -249,7 +251,7 @@ class Economy(commands.Cog):
             return
 
         money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
-        Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
+        await Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
 
         await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
 
@@ -268,10 +270,10 @@ class Economy(commands.Cog):
     async def refresh_daily(self):
         for person in Account.select(Account.user_id, Account.has_redeemed_daily):
             if person.has_redeemed_daily:
-                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
+                await Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175)
             else:
-                Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
-                                    daily_streak=0)
+                await Account.update_acct(user_id=person.user_id, has_redeemed_daily=False, daily_allocated_bets=175,
+                                          daily_streak=0)
 
         logger.info("Daily Refresh Executed\n-----------------------------------")
 
