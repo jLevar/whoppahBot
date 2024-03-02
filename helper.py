@@ -24,3 +24,15 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
 
     if sleep > 0:
         await asyncio.sleep(sleep)
+
+
+class TrackerButton(discord.ui.Button):
+    def __init__(self, label=None, emoji=None, style=None):
+        super().__init__(label=label, emoji=emoji, style=style)
+        self.tracker = 0
+
+    async def callback(self, interaction):
+        self.tracker += 1
+        embed = interaction.message.embeds[0]
+        embed.description = embed.description[:embed.description.index("\u200b") + 1] + f"{self.tracker}"
+        await interaction.response.edit_message(embed=embed)

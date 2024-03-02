@@ -4,6 +4,7 @@ import random
 import discord
 from discord.ext import commands, tasks
 
+import helper
 import settings
 
 logger = settings.logging.getLogger("bot")
@@ -87,3 +88,60 @@ class Basic(commands.Cog):
     @commands.command()
     async def tutorial(self, ctx):
         await ctx.send("This command gives users a starting tutorial!")
+
+    @commands.command()
+    async def store(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.blue(),
+            title="Burger King",
+            description="Welcome to Burger King what can I get for you today?\n"
+        )
+
+        buttons = [
+            discord.ui.button(label="Whopper", style=discord.ButtonStyle.gray),
+            discord.ui.button(label="Fries", style=discord.ButtonStyle.gray),
+            discord.ui.button(label="Check Out", style=discord.ButtonStyle.red),
+        ]
+
+        prices = {"Whoppah": 2.25, "Fries": 1.69}
+        shopping_cart = {"Whoppah": 0, "Fries": 0}
+
+        def make_callback(label):
+            async def default_callback(interaction):
+                # logger.info(shopping_cart[label])
+                embed.description += f"\n1x {label}"
+                await interaction.response.edit_message(embed=embed)
+
+            async def exit_callback(interaction):
+                embed.description += f"\n\nOrder Complete!\n\nThat will be $200,000!"
+                await interaction.response.edit_message(embed=embed, view=None)
+
+            if label == "Check Out":
+                return exit_callback
+            else:
+                return default_callback
+
+        view = discord.ui.View()
+        for button in buttons:
+            button.callback = make_callback(button.label)
+            view.add_item(button)
+
+        await ctx.send(embed=embed, view=view)
+
+    @commands.command()
+    async def cookie(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.from_rgb(98, 52, 18),
+            title="Cookie Clicker",
+            description="Cookies Clicked: \u200b0"
+        )
+
+        buttons = [
+            helper.TrackerButton(emoji="🍪", style=discord.ButtonStyle.gray),
+        ]
+
+        view = discord.ui.View()
+        for button in buttons:
+            view.add_item(button)
+
+        await ctx.send(embed=embed, view=view)
