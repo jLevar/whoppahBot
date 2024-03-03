@@ -21,7 +21,7 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if "burger" in message.content and random.randint(0, 20) == 15:
+        if "burger" in message.content and random.randint(0, 10) == 15:
             await message.add_reaction("😂")
 
     @commands.command()
@@ -88,4 +88,3 @@ class Basic(commands.Cog):
     @commands.command()
     async def tutorial(self, ctx):
         await ctx.send("This command gives users a starting tutorial!")
-

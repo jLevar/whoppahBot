@@ -254,6 +254,7 @@ class Economy(commands.Cog):
 
         menu = {"Whoppers:": 2.25, "Fries:": 1.69}
 
+        # Fields
         embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
         embed.add_field(name="Whoppers:", value="0x")
         embed.add_field(name="Fries:", value="0x")
@@ -272,13 +273,18 @@ class Economy(commands.Cog):
 
             helper.ExitButton(ctx=ctx, embed=embed,
                               exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
-                              label="X", style=discord.ButtonStyle.danger)
+                              label="Checkout", style=discord.ButtonStyle.danger)
         ]
 
-        # def checkout():
-        #     account.balance
-        #
-        # buttons[2].checkout = checkout
+        async def checkout():
+            cost = total_cost.var
+            if cost > account.balance:
+                await ctx.send("YOU AIN'T GOT THE DOUGH FOR DAT!")
+            else:
+                await Account.update_acct(account=account, balance_delta=-cost)
+                await ctx.send("YOU JUST GOT THEM BURGERS BRO!!")
+
+        buttons[2].on_exit = checkout
 
         view = discord.ui.View()
         for button in buttons:
