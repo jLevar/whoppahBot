@@ -100,42 +100,23 @@ class Basic(commands.Cog):
         menu = {"Whoppers:": 2.25, "Fries:": 1.69}
 
         embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
-        embed.add_field(name="Whoppers:", value=0)
-        embed.add_field(name="Fries:", value=0)
-        total_items = helper.ListenerField(embed=embed, name="Total Items:", value=0, inline=False)
-        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value=0, inline=False)
+        embed.add_field(name="Whoppers:", value="0x")
+        embed.add_field(name="Fries:", value="0x")
+        total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
+        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
         total_cost.get_delta = lambda data: float(menu[data["name"]])
 
         buttons = [
-            helper.TrackerButton(embed=embed, field_index=1, emoji="🍔", style=discord.ButtonStyle.blurple,
+            helper.TrackerButton(embed=embed, field_index=1, field_value="<var>x", emoji="🍔",
+                                 style=discord.ButtonStyle.blurple,
                                  listeners=[total_items, total_cost]),
 
-            helper.TrackerButton(embed=embed, field_index=2, emoji="🍟", style=discord.ButtonStyle.blurple,
+            helper.TrackerButton(embed=embed, field_index=2, field_value="<var>x", emoji="🍟",
+                                 style=discord.ButtonStyle.blurple,
                                  listeners=[total_items, total_cost]),
 
             helper.ExitButton(embed=embed, exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
                               label="X", style=discord.ButtonStyle.danger)
-        ]
-
-        view = discord.ui.View()
-        for button in buttons:
-            view.add_item(button)
-
-        await ctx.send(embed=embed, view=view)
-
-    @commands.command(aliases=["bc"])
-    async def burger_clicker(self, ctx):
-        embed = discord.Embed(
-            colour=discord.Colour.blurple(),
-            title="Burger Clicker",
-        )
-
-        embed.add_field(name="Whoppers:", value=0)
-        embed.add_field(name="Fries:", value=0)
-
-        buttons = [
-            helper.TrackerButton(embed=embed, field_index=0, emoji="🍔", style=discord.ButtonStyle.blurple),
-            helper.TrackerButton(embed=embed, field_index=1, emoji="🍟", style=discord.ButtonStyle.blurple)
         ]
 
         view = discord.ui.View()
