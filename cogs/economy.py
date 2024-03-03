@@ -252,12 +252,14 @@ class Economy(commands.Cog):
             description="What can I get for you today?\n\n"
         )
 
-        menu = {"Whoppers:": 2.25, "Fries:": 1.69}
+        menu = {"Whoppers:": 2.25, "Fries:": 1.69, "Drink:": 0.99}
 
         # Fields
-        embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
+        embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69\nDrink: $0.99", inline=False)
         embed.add_field(name="Whoppers:", value="0x")
         embed.add_field(name="Fries:", value="0x")
+        embed.add_field(name="Drink:", value="0x")
+
         total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
         total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
         total_cost.get_delta = lambda data: float(menu[data["name"]])
@@ -271,20 +273,27 @@ class Economy(commands.Cog):
                                  style=discord.ButtonStyle.blurple,
                                  listeners=[total_items, total_cost]),
 
+            helper.TrackerButton(ctx=ctx, embed=embed, field_index=3, field_value="<var>x", emoji="🥤",
+                                 style=discord.ButtonStyle.blurple,
+                                 listeners=[total_items, total_cost]),
+
             helper.ExitButton(ctx=ctx, embed=embed,
                               exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
                               label="Checkout", style=discord.ButtonStyle.danger)
         ]
 
-        async def checkout():
+        async def checkout(interaction, _embed):
             cost = total_cost.var
             if cost > account.balance:
-                await ctx.send("YOU AIN'T GOT THE DOUGH FOR DAT!")
+                await interaction.response.send_message("Insufficient Funds", ephemeral=True)
             else:
+                old_bal = account.balance
                 await Account.update_acct(account=account, balance_delta=-cost)
-                await ctx.send("YOU JUST GOT THEM BURGERS BRO!!")
+                _embed.add_field(name=f"Transaction Complete",
+                                 value=f"Starting Balance: ${old_bal:.2f}\nNew Balance: ${account.balance:.2f}")
+                await interaction.response.edit_message(embed=_embed)
 
-        buttons[2].on_exit = checkout
+        buttons[-1].on_exit = checkout
 
         view = discord.ui.View()
         for button in buttons:

@@ -75,7 +75,7 @@ class TrackerButton(SecureButton):
 class ExitButton(SecureButton):
     def __init__(self, ctx, embed, exit_field=None, value_symbol="", label=None, emoji=None, style=None):
         super().__init__(ctx=ctx, label=label, emoji=emoji, style=style)
-    
+
         if exit_field is None:
             exit_field = {"name": "", "value": ""}
 
@@ -88,14 +88,15 @@ class ExitButton(SecureButton):
         if not await self.verify_user(interaction):
             return
 
-        await self.on_exit()
+        await self.on_exit(interaction, self.embed)
 
         self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
                              inline=False)
-        await interaction.response.edit_message(embed=self.embed, view=None)
+        msg = await interaction.original_response()
+        await msg.edit(embed=self.embed, view=None)
 
     @staticmethod
-    async def on_exit():
+    async def on_exit(interaction, _embed):
         return
 
 
