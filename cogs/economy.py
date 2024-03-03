@@ -242,6 +242,50 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg,
                                     footer=f"Hint: you need ${self.jobs[next_job]['requirements']} to get the next job")
 
+    @commands.command(aliases=["shop"])
+    async def store(self, ctx):
+        account = await Account.fetch(ctx.author.id)
+
+        embed = discord.Embed(
+            colour=discord.Colour.blurple(),
+            title="Welcome to Burger King",
+            description="What can I get for you today?\n\n"
+        )
+
+        menu = {"Whoppers:": 2.25, "Fries:": 1.69}
+
+        embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
+        embed.add_field(name="Whoppers:", value="0x")
+        embed.add_field(name="Fries:", value="0x")
+        total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
+        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
+        total_cost.get_delta = lambda data: float(menu[data["name"]])
+
+        buttons = [
+            helper.TrackerButton(ctx=ctx, embed=embed, field_index=1, field_value="<var>x", emoji="🍔",
+                                 style=discord.ButtonStyle.blurple,
+                                 listeners=[total_items, total_cost]),
+
+            helper.TrackerButton(ctx=ctx, embed=embed, field_index=2, field_value="<var>x", emoji="🍟",
+                                 style=discord.ButtonStyle.blurple,
+                                 listeners=[total_items, total_cost]),
+
+            helper.ExitButton(ctx=ctx, embed=embed,
+                              exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
+                              label="X", style=discord.ButtonStyle.danger)
+        ]
+
+        # def checkout():
+        #     account.balance
+        #
+        # buttons[2].checkout = checkout
+
+        view = discord.ui.View()
+        for button in buttons:
+            view.add_item(button)
+
+        await ctx.send(embed=embed, view=view)
+
     ## HELPER METHODS
     async def pop_work_timer(self, account, elapsed_time):
         user = await self.bot.fetch_user(account.user_id)

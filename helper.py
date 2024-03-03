@@ -26,10 +26,22 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
         await asyncio.sleep(sleep)
 
 
-class TrackerButton(discord.ui.Button):
-    def __init__(self, embed, field_index, field_value="<var>", var=0, listeners=None, label=None, emoji=None,
-                 style=None):
+class SecureButton(discord.ui.Button):
+    def __init__(self, ctx=None, label=None, emoji=None, style=None):
         super().__init__(label=label, emoji=emoji, style=style)
+        self.ctx = ctx
+
+    async def verify_user(self, interaction) -> bool:
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("Please don't interact with other users' buttons", ephemeral=True)
+            return False
+        return True
+
+
+class TrackerButton(SecureButton):
+    def __init__(self, ctx, embed, field_index, field_value="<var>", var=0, listeners=None, label=None, emoji=None,
+                 style=None):
+        super().__init__(ctx=ctx, label=label, emoji=emoji, style=style)
         self.embed = embed
 
         self.field_index = field_index
@@ -45,10 +57,12 @@ class TrackerButton(discord.ui.Button):
 
     # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
+        if not await self.verify_user(interaction):
+            return
+
         self.var += 1
         self.embed.set_field_at(index=self.field_index, name=self.field_name, value=self.value_format(),
                                 inline=self.inline)
-
         await interaction.response.edit_message(embed=self.embed)
 
         for listener in self.listeners:
@@ -58,17 +72,22 @@ class TrackerButton(discord.ui.Button):
         return self.field_value.replace("<var>", f"{self.var:.2f}" if isinstance(self.var, float) else str(self.var))
 
 
-class ExitButton(discord.ui.Button):
-    def __init__(self, embed, exit_field=None, value_symbol="", label=None, emoji=None, style=None):
-        super().__init__(label=label, emoji=emoji, style=style)
+class ExitButton(SecureButton):
+    def __init__(self, ctx, embed, exit_field=None, value_symbol="", label=None, emoji=None, style=None):
+        super().__init__(ctx=ctx, label=label, emoji=emoji, style=style)
+
         if exit_field is None:
             exit_field = {"name": "", "value": ""}
+
         self.embed = embed
         self.exit_field = exit_field
         self.value_symbol = value_symbol
 
     # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
+        if not await self.verify_user(interaction):
+            return
+
         self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
                              inline=False)
         await interaction.response.edit_message(embed=self.embed, view=None)

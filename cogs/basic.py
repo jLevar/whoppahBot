@@ -89,38 +89,3 @@ class Basic(commands.Cog):
     async def tutorial(self, ctx):
         await ctx.send("This command gives users a starting tutorial!")
 
-    @commands.command(aliases=["shop"])
-    async def store(self, ctx):
-        embed = discord.Embed(
-            colour=discord.Colour.blurple(),
-            title="Welcome to Burger King",
-            description="What can I get for you today?\n\n"
-        )
-
-        menu = {"Whoppers:": 2.25, "Fries:": 1.69}
-
-        embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
-        embed.add_field(name="Whoppers:", value="0x")
-        embed.add_field(name="Fries:", value="0x")
-        total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
-        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
-        total_cost.get_delta = lambda data: float(menu[data["name"]])
-
-        buttons = [
-            helper.TrackerButton(embed=embed, field_index=1, field_value="<var>x", emoji="🍔",
-                                 style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items, total_cost]),
-
-            helper.TrackerButton(embed=embed, field_index=2, field_value="<var>x", emoji="🍟",
-                                 style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items, total_cost]),
-
-            helper.ExitButton(embed=embed, exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
-                              label="X", style=discord.ButtonStyle.danger)
-        ]
-
-        view = discord.ui.View()
-        for button in buttons:
-            view.add_item(button)
-
-        await ctx.send(embed=embed, view=view)
