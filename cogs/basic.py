@@ -94,19 +94,24 @@ class Basic(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
             title="Welcome to Burger King",
-            description="What can I get for you today?\n\nWhoppers: $2.25\nFries: $1.69"
+            description="What can I get for you today?\n\n"
         )
 
+        menu = {"Whoppers:": 2.25, "Fries:": 1.69}
+
+        embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69", inline=False)
         embed.add_field(name="Whoppers:", value=0)
         embed.add_field(name="Fries:", value=0)
         total_items = helper.ListenerField(embed=embed, name="Total Items:", value=0, inline=False)
+        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value=0, inline=False)
+        total_cost.get_delta = lambda data: float(menu[data["name"]])
 
         buttons = [
-            helper.TrackerButton(embed=embed, field_index=0, emoji="🍔", style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items]),
+            helper.TrackerButton(embed=embed, field_index=1, emoji="🍔", style=discord.ButtonStyle.blurple,
+                                 listeners=[total_items, total_cost]),
 
-            helper.TrackerButton(embed=embed, field_index=1, emoji="🍟", style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items]),
+            helper.TrackerButton(embed=embed, field_index=2, emoji="🍟", style=discord.ButtonStyle.blurple,
+                                 listeners=[total_items, total_cost]),
 
             helper.ExitButton(embed=embed, exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
                               label="X", style=discord.ButtonStyle.danger)

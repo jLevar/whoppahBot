@@ -34,6 +34,7 @@ class TrackerButton(discord.ui.Button):
         self.field_index = field_index
 
         self.tracker_name = self.embed.fields[self.field_index].name
+        self.inline = self.embed.fields[self.field_index].inline
         self.tracker_value = 0
         self.value_symbol = value_symbol
 
@@ -45,12 +46,12 @@ class TrackerButton(discord.ui.Button):
     async def callback(self, interaction):
         self.tracker_value += 1
         self.embed.set_field_at(index=self.field_index, name=self.tracker_name,
-                                value=f"{self.value_symbol}{self.tracker_value}")
+                                value=f"{self.value_symbol}{self.tracker_value}", inline=self.inline)
 
         await interaction.response.edit_message(embed=self.embed)
 
         for listener in self.listeners:
-            await listener.on_event(interaction, {"name": self.tracker_name, "value": self.tracker_value})
+            await listener.on_event(interaction, data={"name": self.tracker_name, "value": self.tracker_value})
 
 
 class ExitButton(discord.ui.Button):
@@ -79,7 +80,12 @@ class ListenerField:
         self.inline = inline
 
     async def on_event(self, interaction, data):
-        self.value += 1
-        self.embed.set_field_at(index=self.index, name=self.name, value=self.value, inline=self.inline)
+        self.value += self.get_delta(data)
+        value_string = f"{self.value:.2f}" if type(self.value) == float else str(self.value)
+        self.embed.set_field_at(index=self.index, name=self.name, value=value_string, inline=self.inline)
         msg = await interaction.original_response()
         await msg.edit(embed=self.embed)
+
+    @staticmethod
+    def get_delta(data):
+        return 1
