@@ -59,7 +59,8 @@ class Economy(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.dark_blue(),
             title=f"Profile",
-            description=f"Balance: ${account.balance:.2f}\nJob Title: {account.job_title}"
+            description=f"Balance: ${account.balance:.2f}\nJob Title: {account.job_title}\nDaily Streak: {account.daily_streak}"
+                        f"\nXP: {account.main_xp}"
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
@@ -97,12 +98,15 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.\n", sleep=1)
         else:
             daily_streak = account.daily_streak + 1
-            daily_gift = self.daily_ladder(daily_streak)
-            await Account.update_acct(account=account, balance_delta=daily_gift, has_redeemed_daily=1,
+            daily_cash = self.daily_ladder(daily_streak)
+            daily_xp = 50
+            await Account.update_acct(account=account, balance_delta=daily_cash, has_redeemed_daily=1,
                                       daily_streak_delta=1)
             await helper.embed_edit(embed, msg,
-                                    append=f"Today's gift of ${daily_gift} has been added to your account!\n\n",
+                                    append=f"Nice to have you back! Here's today gift!\n",
                                     color=discord.Colour.brand_green(), sleep=1)
+            await helper.embed_edit(embed, msg, append=f"**+${daily_cash}**\n", sleep=1)
+            await helper.embed_edit(embed, msg, append=f"**+{daily_xp}xp**\n\n", sleep=1)
 
             daily_ladder_chart = ""
             start_day = (((daily_streak - 1) // 7) * 7) + 1
@@ -204,6 +208,9 @@ class Economy(commands.Cog):
             return
 
         elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
+        if elapsed_time / datetime.timedelta(minutes=1) < 1:
+            await ctx.send("You must work at least one minute before you cancel!")
+            return
         await self.pop_work_timer(account, elapsed_time)
         await ctx.send("Work cancel successful!")
 
@@ -229,7 +236,7 @@ class Economy(commands.Cog):
             return
 
         if account.balance >= self.jobs[next_job]["requirements"]:
-            account.update_acct(account=account, job_title=next_job)
+            await Account.update_acct(account=account, job_title=next_job)
             await helper.embed_edit(embed, msg,
                                     append=f"Congratulations! Your job title is now: {next_job}\n\n",
                                     sleep=2)
@@ -252,7 +259,11 @@ class Economy(commands.Cog):
             description="What can I get for you today?\n\n"
         )
 
-        menu = {"Whoppers:": 2.25, "Fries:": 1.69, "Drink:": 0.99}
+        menu = {
+            "Whoppers:": {"price": 2.25, "xp": 20},
+            "Fries:": {"price": 1.69, "xp": 15},
+            "Drink:": {"price": 1.20, "xp": 10}
+        }
 
         # Fields
         embed.add_field(name="Menu", value="Whoppers: $2.25\nFries: $1.69\nDrink: $0.99", inline=False)
@@ -262,24 +273,31 @@ class Economy(commands.Cog):
 
         total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
         total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
-        total_cost.get_delta = lambda data: float(menu[data["name"]])
+
+        total_cost.get_delta = lambda data: menu[data["name"]]["price"]
+        total_xp = helper.ListenerField(embed=embed, name="Total XP:", value="<var> xp")
+        total_xp.get_delta = lambda data: menu[data["name"]]["xp"]
 
         buttons = [
             helper.TrackerButton(ctx=ctx, embed=embed, field_index=1, field_value="<var>x", emoji="🍔",
                                  style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items, total_cost]),
+                                 listeners=[total_items, total_cost, total_xp]),
 
             helper.TrackerButton(ctx=ctx, embed=embed, field_index=2, field_value="<var>x", emoji="🍟",
                                  style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items, total_cost]),
+                                 listeners=[total_items, total_cost, total_xp]),
 
             helper.TrackerButton(ctx=ctx, embed=embed, field_index=3, field_value="<var>x", emoji="🥤",
                                  style=discord.ButtonStyle.blurple,
-                                 listeners=[total_items, total_cost]),
+                                 listeners=[total_items, total_cost, total_xp]),
 
             helper.ExitButton(ctx=ctx, embed=embed,
                               exit_field={"name": "\n\nThanks for shopping with us!", "value": ""},
-                              label="Checkout", style=discord.ButtonStyle.danger)
+                              label="Checkout", style=discord.ButtonStyle.green),
+
+            helper.ExitButton(ctx=ctx, embed=embed,
+                              exit_field={"name": "\n\nCome back if you change your mind!", "value": ""},
+                              label="X", style=discord.ButtonStyle.danger),
         ]
 
         async def checkout(interaction, _embed):
@@ -288,12 +306,13 @@ class Economy(commands.Cog):
                 await interaction.response.send_message("Insufficient Funds", ephemeral=True)
             else:
                 old_bal = account.balance
-                await Account.update_acct(account=account, balance_delta=-cost)
+                await Account.update_acct(account=account, balance_delta=-cost, main_xp_delta=total_xp.var)
                 _embed.add_field(name=f"Transaction Complete",
                                  value=f"Starting Balance: ${old_bal:.2f}\nNew Balance: ${account.balance:.2f}")
-                await interaction.response.edit_message(embed=_embed)
+                msg = await interaction.original_response()
+                await msg.edit(embed=embed)
 
-        buttons[-1].on_exit = checkout
+        buttons[-2].on_exit = checkout
 
         view = discord.ui.View()
         for button in buttons:
@@ -306,13 +325,18 @@ class Economy(commands.Cog):
         user = await self.bot.fetch_user(account.user_id)
         elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
 
-        if elapsed_time / datetime.timedelta(minutes=1) < 1:
-            return
-
         money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
-        await Account.update_acct(account=account, balance_delta=money_earned, shift_start="NULL", shift_length="NULL")
+        xp_earned = int(elapsed_hours * 30)
+        await Account.update_acct(account=account, balance_delta=money_earned, main_xp_delta=xp_earned,
+                                  shift_start="NULL", shift_length="NULL")
 
-        await user.send(f"You earned ${money_earned:.2f} Burger Bucks for working!")
+        embed = discord.Embed(
+            colour=discord.Colour.from_rgb(77, 199, 222),  # Space Blue
+            title=f"Shift for {datetime.datetime.now():%m-%d-%Y}"
+        )
+        embed.add_field(name="You Earned:", value=f"${money_earned:.2f}\n{xp_earned} xp")
+
+        await user.send(embed=embed)
 
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes

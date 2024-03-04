@@ -3,3 +3,7 @@ Changes:
 - Huge !promotion update:
   - Now in embed format
 - Added !suggestion
+- Added !store / !shop
+- Added xp to daily, working, profile, shop, etc.
+- Added placeholder !tutorial
+- Shift is now in embed format

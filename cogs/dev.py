@@ -148,8 +148,8 @@ class Dev(commands.Cog):
         if flag == "-m":
             await Account.update_acct(user_id=ctx.author.id, has_redeemed_daily=False)
             await ctx.send("Your daily has been reset")
-        else:
-            for person in await Account.select(await Account.user_id, await Account.has_redeemed_daily):
+        elif flag == "-a":
+            for person in Account.select(Account.user_id, Account.has_redeemed_daily):
                 if person.has_redeemed_daily:
                     await Account.update_acct(user_id=person.user_id, has_redeemed_daily=False,
                                               daily_allocated_bets=175)

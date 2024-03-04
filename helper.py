@@ -2,7 +2,7 @@ import asyncio
 import discord
 
 
-async def validate_user_id(bot, ctx, user_id):
+async def validate_user_id(bot, user_id):
     try:
         await bot.fetch_user(user_id)
     except discord.errors.HTTPException:
@@ -87,7 +87,8 @@ class ExitButton(SecureButton):
     async def callback(self, interaction):
         if not await self.verify_user(interaction):
             return
-
+        
+        await interaction.response.defer()
         await self.on_exit(interaction, self.embed)
 
         self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
