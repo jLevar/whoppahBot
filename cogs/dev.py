@@ -79,7 +79,7 @@ class Dev(commands.Cog):
     @commands.is_owner()
     async def close_account(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not await helper.validate_user_id(self.bot, ctx, user_id):
+        if not await helper.validate_user_id(self.bot, user_id):
             await ctx.send("Invalid user_id")
             return
 
@@ -95,11 +95,11 @@ class Dev(commands.Cog):
             await ctx.send("Invalid data argument")
             return
 
-        if flag not in ["-b", "-ds", "-jt"]:
+        if flag not in ["-b", "-ds", "-jt", "-xp"]:
             await ctx.send("Invalid flag")
             return
 
-        if not await helper.validate_user_id(self.bot, ctx, user_id):
+        if not await helper.validate_user_id(self.bot, user_id):
             await ctx.send("Invalid user_id")
             return
 
@@ -112,6 +112,9 @@ class Dev(commands.Cog):
         elif flag == "-jt":
             data = "Unemployed" if data == "0" else str(data)
             await Account.update_acct(user_id=user_id, job_title=data)
+        elif flag == "-xp":
+            data = int(data)
+            await Account.update_acct(user_id=user_id, main_xp_delta=data)
         else:
             await ctx.send("This block should be unreachable")
             return
@@ -122,7 +125,7 @@ class Dev(commands.Cog):
     @commands.is_owner()
     async def gambling_psa(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
-        if not await helper.validate_user_id(self.bot, ctx, user_id):
+        if not await helper.validate_user_id(self.bot, user_id):
             await ctx.send("Invalid user_id")
             return
 

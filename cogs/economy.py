@@ -26,11 +26,13 @@ class Economy(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.jobs = {"Unemployed": {"salary": 0, "requirements": 0},
-                     "Dishwasher": {"salary": 7.25, "requirements": 0},
-                     "Burger Flipper": {"salary": 13.50, "requirements": 750},
-                     "Grill Master": {"salary": 16.75, "requirements": 5000}
-                     }
+        self.jobs = {
+            "Unemployed": {"salary": 0, "requirements": {"balance": 0, "xp": 0}},
+            "Dishwasher": {"salary": 7.25, "requirements": {"balance": 0, "xp": 0}},
+            "Burger Flipper": {"salary": 13.50, "requirements": {"balance": 750, "xp": 2500}},
+            "Grill Master": {"salary": 16.75, "requirements": {"balance": 5000, "xp": 15000}},
+            "Shift Lead": {"salary": 20.00, "requirements": {"balance": 25000, "xp": 50000}}
+        }
         self.daily_locked_users = []
         self.check_work_timers.start()
         self.refresh_daily.start()
@@ -143,7 +145,7 @@ class Economy(commands.Cog):
             await ctx.send("Insufficient Funds")
             return
 
-        if not await helper.validate_user_id(self.bot, ctx, receiver):
+        if not await helper.validate_user_id(self.bot, receiver):
             await ctx.send("Recipient Unknown")
             return
 
@@ -235,7 +237,9 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg, footer="Note: You have the best job currently in the game")
             return
 
-        if account.balance >= self.jobs[next_job]["requirements"]:
+        requirements = self.jobs[next_job]["requirements"]
+
+        if account.balance >= requirements["balance"] and account.main_xp >= requirements["xp"]:
             await Account.update_acct(account=account, job_title=next_job)
             await helper.embed_edit(embed, msg,
                                     append=f"Congratulations! Your job title is now: {next_job}\n\n",
@@ -247,10 +251,10 @@ class Economy(commands.Cog):
                                     append="Sorry, but we will not be moving forward with your promotion at this time.",
                                     sleep=2)
             await helper.embed_edit(embed, msg,
-                                    footer=f"Hint: you need ${self.jobs[next_job]['requirements']} to get the next job")
+                                    footer=f"Hint: you need ${requirements['balance']} and {requirements['xp']}xp to get the next job")
 
-    @commands.command(aliases=["shop"])
-    async def store(self, ctx):
+    @commands.command(aliases=["store"])
+    async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
 
         embed = discord.Embed(

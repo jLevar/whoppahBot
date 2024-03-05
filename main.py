@@ -23,7 +23,7 @@ def run():
         for cog_file in settings.COGS_DIR.glob("*.py"):
             if cog_file.name != "__init__.py":
                 await bot.load_extension(f"cogs.{cog_file.name[:-3]}")
-        await bot.change_presence(activity=discord.Game('!tutorial'))
+        await bot.change_presence(activity=discord.Game('!help'))
 
     @bot.event
     async def on_command_error(ctx, error):
