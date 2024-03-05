@@ -102,7 +102,8 @@ class Economy(commands.Cog):
             daily_streak = account.daily_streak + 1
             daily_cash = self.daily_ladder(daily_streak)
             daily_xp = 50
-            await Account.update_acct(account=account, balance_delta=daily_cash, has_redeemed_daily=1,
+            await Account.update_acct(account=account, balance_delta=daily_cash, main_xp_delta=daily_xp,
+                                      has_redeemed_daily=1,
                                       daily_streak_delta=1)
             await helper.embed_edit(embed, msg,
                                     append=f"Nice to have you back! Here's today gift!\n",
