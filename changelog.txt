@@ -1,13 +1,17 @@
-Version 1.0.3
-Changes:
-- Added new subcommand: `!work cancel` which will cancel your shift and pay out immediately!
-- New command: `!whoppa` sends the infamous 'did u get a whoppa?' gif
-- Huge !daily update:
-  - Now in embed format
-  - Daily streak keeps track of how many consecutive days you've redeemed !daily
-  - Gift now scales so the longer the streak the more money you'll get
-    - Running the numbers, a 365 streak will make you about $209,000 more than if you redeemed every other day
-    - https://www.desmos.com/calculator/5pprrkxpf2
+Version 1.0.4
+New Features:
+- Experience Points! (XP)
+  - Added a new XP system that you can earn from daily, working, and...
+- !shop
+  - A new command that allows you to buy food from BK for XP!
+- !suggestion
+  - Links a Google Form where you can suggest new features and changes!
 
-Bug Fixes:
-- Transferring money to self no longer deletes money.
+Changes:
+- !promotion
+  - Now in embed format
+  - Based upon both balance and xp!
+- !profile
+  - Shows daily streak and xp points
+- !work
+  - Shift paycheck is now in embed format

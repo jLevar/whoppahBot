@@ -1,7 +1,10 @@
+import datetime
+import random
+
 import discord
 from discord.ext import commands, tasks
-import random
-import datetime
+
+import helper
 import settings
 
 logger = settings.logging.getLogger("bot")
@@ -18,7 +21,7 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if random.randint(0, 42) == 23:
+        if "burger" in message.content and random.randint(0, 10) == 15:
             await message.add_reaction("😂")
 
     @commands.command()
@@ -46,11 +49,22 @@ class Basic(commands.Cog):
         logger.info("11:11!")
 
     @commands.command()
+    async def suggestion(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.purple(),
+            title="Have a suggestion for a new feature or change?",
+            description="Fill out this form to let us know!\nhttps://forms.gle/hE3A4Neiia3njCJV7"
+        )
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
     async def github(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.orange(),
-            title="Link to Project GitHub",
-            url="https://github.com/jLevar/whoppahBot"
+            title="Curious about how Whoppah Bot works?",
+            description="It's all open source on GitHub!\nhttps://github.com/jLevar/whoppahBot"
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
@@ -59,10 +73,9 @@ class Basic(commands.Cog):
     @commands.command()
     async def bug(self, ctx):
         embed = discord.Embed(
-            colour=discord.Colour.purple(),
+            colour=discord.Colour.dark_purple(),
             title="Experienced a bug or technical issue?",
-            description="Please fill out this form to get it resolved as quickly as possible",
-            url="https://forms.gle/jwEGTjM11jDakSQA7"
+            description="Fill out this form to get it resolved as quickly as possible!\nhttps://forms.gle/jwEGTjM11jDakSQA7"
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
@@ -72,5 +85,6 @@ class Basic(commands.Cog):
     async def whoppa(self, ctx):
         await ctx.send("https://tenor.com/view/whoppa-whoppah-did-you-get-a-whoppa-woppa-whopper-gif-23161878")
 
-
-
+    @commands.command()
+    async def tutorial(self, ctx):
+        await ctx.send("This command gives users a starting tutorial!")
