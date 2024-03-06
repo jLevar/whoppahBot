@@ -169,7 +169,7 @@ class Economy(commands.Cog):
             elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
             percent_left = (elapsed_hours / account.shift_length)
 
-            if percent_left > 100:
+            if percent_left > 1:
                 await self.pop_work_timer(account, elapsed_time)
                 await ctx.send("Your shift's up!")
                 return
@@ -346,11 +346,12 @@ class Economy(commands.Cog):
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
+        await Account.clean_database(self.bot)
         current_time = datetime.datetime.utcnow()
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_time = (current_time - account.shift_start)
             elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
-            # logger.debug(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
+            logger.debug(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
             if elapsed_hours >= account.shift_length:
                 await self.pop_work_timer(account, elapsed_time)
 

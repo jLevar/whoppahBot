@@ -1,5 +1,6 @@
 import peewee
 
+import helper
 import settings
 
 accounts_db = peewee.SqliteDatabase("./databases/accounts.db")
@@ -37,6 +38,13 @@ class Account(peewee.Model):
     async def close_account(user_id: str):
         acct = Account.get(user_id=user_id)
         acct.delete_instance()
+
+    @staticmethod
+    async def clean_database(bot):
+        for account in Account.select():
+            if not await helper.validate_user_id(bot, account.user_id):
+                logger.info(f"REMOVED INVALID ID [{account.user_id}] from accounts.db")
+                account.delete_instance()
 
     @staticmethod
     async def update_acct(user_id=None, account=None, **kwargs):

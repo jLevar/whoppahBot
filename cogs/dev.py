@@ -168,3 +168,9 @@ class Dev(commands.Cog):
     async def smdabtn(self, ctx, n):
         await Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")
+
+    @commands.command()
+    @commands.is_owner()
+    async def clean_database(self, ctx):
+        await Account.clean_database(self.bot)
+        await ctx.send("Database cleaned of all invalid user id's")
