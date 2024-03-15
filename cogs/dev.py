@@ -95,7 +95,7 @@ class Dev(commands.Cog):
             await ctx.send("Invalid data argument")
             return
 
-        if flag not in ["-b", "-ds", "-jt", "-xp"]:
+        if flag not in ["-b", "-tb", "-ds", "-jt", "-xp"]:
             await ctx.send("Invalid flag")
             return
 
@@ -104,22 +104,30 @@ class Dev(commands.Cog):
             return
 
         if flag == "-b":
-            data = int(data)
+            operation = "balance by"
+            data = float(data)
             await Account.update_acct(user_id=user_id, balance_delta=data)
+        elif flag == "-tb":
+            operation = "total balance to"
+            data = float(data)
+            await Account.update_acct(user_id=user_id, balance=data)
         elif flag == "-ds":
+            operation = "daily streak to"
             data = int(data)
             await Account.update_acct(user_id=user_id, daily_streak=data)
         elif flag == "-jt":
+            operation = "job title to"
             data = "Unemployed" if data == "0" else str(data)
             await Account.update_acct(user_id=user_id, job_title=data)
         elif flag == "-xp":
+            operation = "xp by"
             data = int(data)
             await Account.update_acct(user_id=user_id, main_xp_delta=data)
         else:
             await ctx.send("This block should be unreachable")
             return
 
-        await ctx.send("Successful Gamesharking!")
+        await ctx.send(f"Changed ID={user_id}'s {operation} {data}")
 
     @commands.command()
     @commands.is_owner()
@@ -174,3 +182,9 @@ class Dev(commands.Cog):
     async def clean_database(self, ctx):
         await Account.clean_database(self.bot)
         await ctx.send("Database cleaned of all invalid user id's")
+
+    @commands.command()
+    @commands.is_owner()
+    async def shutdown(self, ctx):
+        await ctx.send("Shutting down...")
+        await helper.safe_shutdown(self.bot)

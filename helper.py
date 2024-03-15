@@ -2,6 +2,10 @@ import asyncio
 import discord
 
 
+async def safe_shutdown(bot):
+    await bot.close()
+
+
 async def validate_user_id(bot, user_id):
     try:
         await bot.fetch_user(user_id)
@@ -87,7 +91,7 @@ class ExitButton(SecureButton):
     async def callback(self, interaction):
         if not await self.verify_user(interaction):
             return
-        
+
         await interaction.response.defer()
         await self.on_exit(interaction, self.embed)
 

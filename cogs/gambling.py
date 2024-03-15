@@ -42,7 +42,7 @@ class Gambling(commands.Cog):
 
     ## COMMANDS
     @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
-    @commands.cooldown(1, 8, commands.BucketType.user)
+    @commands.cooldown(1, 7, commands.BucketType.user)
     async def deal_with_the_devil(self, ctx, choice: int, amount: float):
         account = await Account.fetch(ctx.message.author.id)
         embed = discord.Embed(
@@ -103,7 +103,7 @@ class Gambling(commands.Cog):
             await self.send_gambling_psa(ctx.author)
 
     @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
-    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
         account = await Account.fetch(ctx.message.author.id)
         embed = discord.Embed(

@@ -42,9 +42,15 @@ class Account(peewee.Model):
     @staticmethod
     async def clean_database(bot):
         for account in Account.select():
-            if not await helper.validate_user_id(bot, account.user_id):
-                logger.info(f"REMOVED INVALID ID [{account.user_id}] from accounts.db")
-                account.delete_instance()
+            attempts = 0
+            while True:
+                if not await helper.validate_user_id(bot, account.user_id):
+                    if attempts < 5:
+                        attempts += 1
+                        continue
+                    else:
+                        logger.info(f"REMOVED INVALID ID [{account.user_id}] from accounts.db")
+                        account.delete_instance()
 
     @staticmethod
     async def update_acct(user_id=None, account=None, **kwargs):
