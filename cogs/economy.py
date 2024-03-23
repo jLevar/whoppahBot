@@ -260,7 +260,6 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg,
                                     footer=f"Hint: you need ${requirements['balance']} and {requirements['xp']}xp to get the next job")
 
-    # TODO Refactor
     @commands.command(aliases=["store"])
     async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
@@ -285,9 +284,15 @@ class Economy(commands.Cog):
         embed.add_field(name="Drink:", value="0x")
 
         total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
-        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
 
+        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="<var>", inline=False)
         total_cost.get_delta = lambda data: menu[data["name"]]["price"]
+
+        def value_format(self):
+            return self.value.replace("<var>", f"{helper.to_dollars(self.var)}")
+
+        total_cost.value_format = value_format.__get__(total_cost, helper.ListenerField)
+
         total_xp = helper.ListenerField(embed=embed, name="Total XP:", value="<var> xp")
         total_xp.get_delta = lambda data: menu[data["name"]]["xp"]
 
@@ -322,7 +327,7 @@ class Economy(commands.Cog):
                 await Assets.update_assets(user=user_assets, cash_delta=-cost)
                 await Account.update_acct(account=account, main_xp_delta=total_xp.var)
                 _embed.add_field(name=f"Transaction Complete",
-                                 value=f"Starting Balance: ${old_bal:.2f}\nNew Balance: ${user_assets.cash:.2f}")
+                                 value=f"Starting Balance: {helper.to_dollars(old_bal)}\nNew Balance: {user_assets.fmoney()}")
                 msg = await interaction.original_response()
                 await msg.edit(embed=embed)
 

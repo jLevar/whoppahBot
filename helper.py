@@ -139,4 +139,4 @@ class ListenerField:
         return 1
 
     def value_format(self) -> str:
-        return self.value.replace("<var>", f"{self.var:.2f}" if isinstance(self.var, float) else str(self.var))
+        return self.value.replace("<var>", str(self.var))

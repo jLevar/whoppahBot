@@ -107,11 +107,12 @@ class Dev(commands.Cog):
         if flag == "-b":
             operation = "balance by"
             data = int(data)
-            await Assets.update_assets(user_id=user_id, cash=data)
+            data *= 100
+            await Assets.update_assets(user_id=user_id, cash_delta=data)
         elif flag == "-tb":
             operation = "total balance to"
             data = int(data)
-            data = -data if data < 0 else data
+            data *= 100
             await Assets.update_assets(user_id=user_id, cash=data)
         elif flag == "-ds":
             operation = "daily streak to"
