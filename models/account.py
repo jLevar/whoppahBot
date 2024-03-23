@@ -20,6 +20,9 @@ class Account(BaseModel):
     @staticmethod
     async def fetch(user_id: str):
         account, is_created = Account.get_or_create(user_id=user_id)
+        if is_created:
+            from models.assets import Assets
+            Assets.create(user_id=user_id)
         return account
 
     @staticmethod

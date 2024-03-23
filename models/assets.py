@@ -17,8 +17,11 @@ class Assets(BaseModel):
 
     @staticmethod
     async def fetch(user_id: str):
-        inventory, is_created = Assets.get_or_create(user_id=user_id)
-        return inventory
+        assets, is_created = Assets.get_or_create(user_id=user_id)
+        if is_created:
+            from models.account import Account
+            Account.create(user_id=user_id)
+        return assets
 
     @staticmethod
     async def update_assets(user_id=None, user=None, **kwargs):
@@ -42,8 +45,10 @@ class Assets(BaseModel):
         user.save()
 
     @staticmethod
-    async def leaderboard(num_users: int):
-        return [user.user_id for user in Assets.select().order_by(-Assets.cash)][:num_users]
-
-    def fmoney(self) -> str:
-        return helper.to_dollars(int(self.cash))
+    async def top_users(num_users: int, column="cash"):
+        if column == 'cash':
+            return [(user.user_id, user.cash) for user in Assets.select().order_by(-Assets.cash)][:num_users]
+        elif column == 'gold':
+            return [(user.user_id, user.gold) for user in Assets.select().order_by(-Assets.gold)][:num_users]
+        else:
+            raise AttributeError("Called Assets.users_by_column() with bad column arg")
