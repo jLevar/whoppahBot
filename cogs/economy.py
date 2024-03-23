@@ -356,7 +356,7 @@ class Economy(commands.Cog):
         money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
         xp_earned = int(elapsed_hours * 30)
 
-        await Account.update_acct(user=user_assets, cash_delta=money_earned)
+        await Assets.update_assets(user=user_assets, cash_delta=money_earned)
         await Account.update_acct(account=account, main_xp_delta=xp_earned, shift_start="NULL", shift_length="NULL")
 
         embed = discord.Embed(

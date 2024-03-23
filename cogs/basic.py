@@ -17,7 +17,6 @@ async def setup(bot):
 class Basic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.eleven_eleven.start()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import helper
 import settings
-from cogs import gambling
+from cogs.casino import Casino
 from models.account import Account
 from models.assets import Assets
 
@@ -141,7 +141,7 @@ class Dev(commands.Cog):
             return
 
         user = await self.bot.fetch_user(user_id)
-        await gambling.Gambling.send_gambling_psa(user)
+        await Casino.send_gambling_psa(user)
 
     @commands.command()
     @commands.is_owner()

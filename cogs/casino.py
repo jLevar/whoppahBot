@@ -9,10 +9,10 @@ import asyncio
 
 
 async def setup(bot):
-    await bot.add_cog(Gambling(bot))
+    await bot.add_cog(Casino(bot))
 
 
-class Gambling(commands.Cog):
+class Casino(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -22,21 +22,16 @@ class Gambling(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
             description=f"You've reached the daily limit for the gambling mini-games.\n\n"
-                        f"Please use this restriction as an opportunity to step away and take a break.\n\n"
-                        f"These mini-games can activate your brain's circuitry in a way that makes it highly addictive.\n\n"
-                        f"I would encourage you to consider taking a look at these resources:\n"
-                        f"https://www.helpguide.org/articles/addictions/gambling-addiction-and-problem-gambling.html"
-                        f"https://www.apa.org/monitor/2023/07/how-gambling-affects-the-brain",
-            title="Gambling"
-        )
-        await user.send(embed=embed)
-        await asyncio.sleep(10)
-        embed = discord.Embed(
-            colour=discord.Colour.blurple(),
-            description=f"Please note that Whoppah Bot is still in very early stages of development.\n If you think this warning "
-                        f"was sent out prematurely please send feedback. The intent of this message is not to treat users like addicts if "
-                        f"they are just playing responsibly and not excessively.\n\n",
-            title="A Note from the Developer"
+                        f"Let this restriction be an opportunity to step away from Discord and take a break.\n\n"
+                        f"This restriction's purpose is twofold. One, to limit game usage in case you have found a "
+                        f"highly effective strategy to win money. And two, to make sure addictive usage is minimized."
+                        f"\n-\n"
+                        f"These mini-games can activate your brain's circuitry in a way that makes it addictive.\n\n"
+                        f"If you felt stuck playing until you hit the daily limit, consider maybe taking a look at these resources:\n"
+                        f"https://www.helpguide.org/articles/addictions/gambling-addiction-and-problem-gambling.html\n"
+                        f"https://www.apa.org/monitor/2023/07/how-gambling-affects-the-brain\n-\n"
+                        f"*Again, your engagement with the bot and games are greatly appreciated.*\n\n**Feel free to continue playing tomorrow!**",
+            title="Casino Daily Limit Reached"
         )
         await user.send(embed=embed)
 
