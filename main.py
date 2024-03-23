@@ -2,14 +2,18 @@ import discord
 from discord.ext import commands
 
 import settings
+
+from models.base import db
 from models.account import Account
-from models.account import accounts_db
+
+from models.assets import Assets
 
 logger = settings.logging.getLogger("bot")
 
 
 def run():
-    accounts_db.create_tables([Account])
+    db.connect()
+    db.create_tables([Account, Assets])
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True

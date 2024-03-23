@@ -5,6 +5,7 @@ import helper
 import settings
 from cogs import gambling
 from models.account import Account
+from models.assets import Assets
 
 logger = settings.logging.getLogger('bot')
 
@@ -105,12 +106,13 @@ class Dev(commands.Cog):
 
         if flag == "-b":
             operation = "balance by"
-            data = float(data)
-            await Account.update_acct(user_id=user_id, balance_delta=data)
+            data = int(data)
+            await Assets.update_assets(user_id=user_id, cash=data)
         elif flag == "-tb":
             operation = "total balance to"
-            data = float(data)
-            await Account.update_acct(user_id=user_id, balance=data)
+            data = int(data)
+            data = -data if data < 0 else data
+            await Assets.update_assets(user_id=user_id, cash=data)
         elif flag == "-ds":
             operation = "daily streak to"
             data = int(data)

@@ -14,6 +14,16 @@ async def validate_user_id(bot, user_id):
     return True
 
 
+def to_dollars(cents: int) -> str:
+    if cents % 100 == 0:
+        return f"${cents // 100}.00"
+    elif cents % 100 < 10:
+        return f"${cents // 100}.0{cents % 100}"
+    else:
+        return f"${cents // 100}.{cents % 100}"
+
+
+### EMBED LIBRARY ###
 async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
     if color:
         embed.colour = color
@@ -30,6 +40,7 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
         await asyncio.sleep(sleep)
 
 
+### BUTTON LIBRARY ###
 class SecureButton(discord.ui.Button):
     def __init__(self, ctx=None, label=None, emoji=None, style=None):
         super().__init__(label=label, emoji=emoji, style=style)

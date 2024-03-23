@@ -1,17 +1,2 @@
-Version 1.0.4
-New Features:
-- Experience Points! (XP)
-  - Added a new XP system that you can earn from daily, working, and...
-- !shop
-  - A new command that allows you to buy food from BK for XP!
-- !suggestion
-  - Links a Google Form where you can suggest new features and changes!
-
-Changes:
-- !promotion
-  - Now in embed format
-  - Based upon both balance and xp!
-- !profile
-  - Shows daily streak and xp points
-- !work
-  - Shift paycheck is now in embed format
+Version 1.1
+The Asset Update
