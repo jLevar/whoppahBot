@@ -1,2 +1,12 @@
 Version 1.1
-The Asset Update
+** The Asset Update **
+
+New Features:
+- Added new finite assets that you can obtain! Including:
+  - Gold, silver, and more!
+
+Changes:
+- Leaderboard can now be sorted by different assets!
+
+Bug Fixes:
+- Burger Bucks are now stored in an integer datatype, removing any weird rounding errors you might have encountered.
