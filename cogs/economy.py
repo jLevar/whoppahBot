@@ -137,9 +137,9 @@ class Economy(commands.Cog):
     def daily_ladder(day: int):
         return (((day - 1) % 7) * day) + 50
 
-    @commands.command(aliases=['t'])
+    @commands.command(aliases=['t'], help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def transfer(self, ctx, asset: str, amount, mention):
+    async def transfer(self, ctx, mention, amount, asset="cash"):
         if asset == "cash":
             amount = float(amount) * 100
         amount = int(amount)
@@ -165,7 +165,7 @@ class Economy(commands.Cog):
             return
 
         if not await helper.confirmation_request(ctx,
-                                                 text=f"Transfer {Assets.format(asset, amount)} ({asset.title()}) to {receiver_name}?",
+                                                 text=f"Transfer {Assets.format(asset, amount)} in {asset} to {receiver_name}?",
                                                  timeout=30):
             return
 
@@ -378,7 +378,6 @@ class Economy(commands.Cog):
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
-        await Account.clean_database()
         current_time = datetime.datetime.utcnow()
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_time = (current_time - account.shift_start)
