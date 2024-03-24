@@ -51,3 +51,18 @@ class Assets(BaseModel):
             return [(user.user_id, user.gold) for user in Assets.select().order_by(-Assets.gold)][:num_users]
         else:
             raise AttributeError("Called Assets.users_by_column() with bad column arg")
+
+    @staticmethod
+    def format(asset_type: str, balance: int) -> str:
+        if asset_type == "cash":
+            if balance % 100 == 0:
+                return f"${balance // 100}.00"
+            elif balance % 100 < 10:
+                return f"${balance // 100}.0{balance % 100}"
+            else:
+                return f"${balance // 100}.{balance % 100}"
+        elif asset_type == "gold":
+            return f"{balance} oz"
+        else:
+            return f"{balance}"
+

@@ -40,17 +40,19 @@ class Economy(commands.Cog):
 
     ## COMMANDS
     @commands.command(aliases=['bal', 'b'])
-    async def balance(self, ctx, mention: str = None):
+    async def balance(self, ctx, asset_type: str = "cash", mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
         user_assets = await Assets.fetch(user_id)
         user = await self.bot.fetch_user(user_id)
+        balance = getattr(user_assets, asset_type)
 
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
-            title=f"Balance: {helper.to_dollars(user_assets.cash)}",
+            title=f"{asset_type.title()} Balance: {Assets.format(asset_type, balance)}",
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
+
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['p'])
@@ -63,34 +65,31 @@ class Economy(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.dark_blue(),
             title=f"Profile",
-            description=f"Balance: {helper.to_dollars(user_assets.cash)}\nJob Title: {user_acc.job_title}\nDaily Streak: {user_acc.daily_streak}"
-                        f"\nXP: {user_acc.main_xp}\nGold: {user_assets.gold}"
+            description=f"Balance: {Assets.format('cash', user_assets.cash)}\nJob Title: {user_acc.job_title}\nDaily Streak: {user_acc.daily_streak}"
+                        f"\nXP: {user_acc.main_xp}\nGold: {Assets.format('gold', user_assets.gold)}"
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['lb'])
-    async def leaderboard(self, ctx, sort_attr="cash"):
+    async def leaderboard(self, ctx, sort_asset="cash"):
         embed = discord.Embed(
             colour=discord.Colour.dark_green(),
-            title=f"Top 10 Users by {sort_attr.title()}",
+            title=f"Top 10 Users by {sort_asset.title()}",
             description=""
         )
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
 
-        for i, user_data in enumerate(await Assets.top_users(10, column=sort_attr)):
+        for i, user_data in enumerate(await Assets.top_users(10, column=sort_asset)):
             user_id = user_data[0]
             user_value = user_data[1]
             user = await self.bot.fetch_user(user_id)
 
-            if sort_attr == "cash":
-                user_value = helper.to_dollars(user_value)
-
             if user.id == ctx.author.id:
-                embed.description += f"**{i + 1} |\t{user.name} -- {user_value}**\n"
+                embed.description += f"**{i + 1} |\t{user.name} -- {Assets.format(sort_asset, user_value)}**\n"
             else:
-                embed.description += f"{i + 1} |\t{user.name} -- {user_value}\n"
+                embed.description += f"{i + 1} |\t{user.name} -- {Assets.format(sort_asset, user_value)}\n"
 
         await ctx.send(embed=embed)
 
@@ -261,13 +260,13 @@ class Economy(commands.Cog):
                                     append=f"Congratulations! Your job title is now: {next_job}\n\n",
                                     sleep=2)
             await helper.embed_edit(embed, msg,
-                                    append=f"Your salary is now: {helper.to_dollars(self.jobs[next_job]['salary'])} an hour!\n\n")
+                                    append=f"Your salary is now: {Assets.format('cash', self.jobs[next_job]['salary'])} an hour!\n\n")
         else:
             await helper.embed_edit(embed, msg,
                                     append="Sorry, but we will not be moving forward with your promotion at this time.",
                                     sleep=2)
             await helper.embed_edit(embed, msg,
-                                    footer=f"Hint: you need {helper.to_dollars(requirements['balance'])} and {requirements['xp']}xp to get the next job")
+                                    footer=f"Hint: you need {Assets.format('cash', requirements['balance'])} and {requirements['xp']}xp to get the next job")
 
     @commands.command(aliases=["store"])
     async def shop(self, ctx):
@@ -298,7 +297,7 @@ class Economy(commands.Cog):
         total_cost.get_delta = lambda data: menu[data["name"]]["price"]
 
         def value_format(self):
-            return self.value.replace("<var>", f"{helper.to_dollars(self.var)}")
+            return self.value.replace("<var>", f"{Assets.format('cash', self.var)}")
 
         total_cost.value_format = value_format.__get__(total_cost, helper.ListenerField)
 
@@ -336,7 +335,8 @@ class Economy(commands.Cog):
                 await Assets.update_assets(user=user_assets, cash_delta=-cost)
                 await Account.update_acct(account=account, main_xp_delta=total_xp.var)
                 _embed.add_field(name=f"Transaction Complete",
-                                 value=f"Starting Balance: {helper.to_dollars(old_bal)}\nNew Balance: {helper.to_dollars(user_assets.cash)}")
+                                 value=f"Starting Balance: {Assets.format('cash', old_bal)}\n"
+                                       f"New Balance: {Assets.format('cash', user_assets.cash)}")
                 msg = await interaction.original_response()
                 await msg.edit(embed=embed)
 
@@ -365,7 +365,7 @@ class Economy(commands.Cog):
             colour=discord.Colour.from_rgb(77, 199, 222),  # Space Blue
             title=f"Shift for {datetime.datetime.now():%m-%d-%Y}"
         )
-        embed.add_field(name="You Earned:", value=f"{helper.to_dollars(money_earned)}\n{xp_earned} xp")
+        embed.add_field(name="You Earned:", value=f"{Assets.format('cash', money_earned)}\n{xp_earned} xp")
 
         await user.send(embed=embed)
 

@@ -6,7 +6,10 @@ New Features:
   - Gold, silver, and more!
 
 Changes:
-- Leaderboard can now be sorted by different assets!
+- !leaderboard can now be sorted by different assets
+- !transfer can be used for all assets
 
 Bug Fixes:
-- Burger Bucks are now stored in an integer datatype, removing any weird rounding errors you might have encountered.
+- Burger Bucks are now stored in an integer datatype
+  - This means your cash balance as displayed is 100% accurate, eliminating weird off-by-one-cent errors
+  - Any weird rounding errors you might have encountered are also now eliminated.
