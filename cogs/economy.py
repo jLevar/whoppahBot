@@ -140,30 +140,32 @@ class Economy(commands.Cog):
 
     @commands.command(aliases=['t'])
     @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def transfer(self, ctx, amount: float, mention):
-        amount = int(amount * 100)
+    async def transfer(self, ctx, asset: str, amount, mention):
+        if asset == "cash":
+            amount = float(amount) * 100
+        amount = int(amount)
 
         if amount <= 0:
-            await ctx.send("Sorry, you have to send more than $0")
+            await ctx.send("Sorry, you have to send at least one cent!")
             return
 
         sender = await Assets.fetch(ctx.author.id)
         receiver = await Assets.fetch(mention[2:-1])
 
+        if getattr(sender, asset) < amount:
+            await ctx.send("Insufficient Funds")
+            return
+
         if sender == receiver:
             await ctx.send("You cannot transfer money to self")
             return
 
-        if sender.cash < amount:
-            await ctx.send("Insufficient Funds")
-            return
-
-        if not await helper.validate_user_id(self.bot, receiver.user_id):
+        if not receiver or not await helper.validate_user_id(self.bot, receiver.user_id):
             await ctx.send("Recipient Unknown")
             return
 
-        await Assets.update_assets(user=receiver, cash_delta=amount)
-        await Assets.update_assets(user=sender, cash_delta=-amount)
+        await Assets.update_assets(user=receiver, **{f"{asset}_delta": amount})
+        await Assets.update_assets(user=sender, **{f"{asset}_delta": -amount})
 
         await ctx.send("Transfer complete!")
 
@@ -370,7 +372,7 @@ class Economy(commands.Cog):
     ## TASKS
     @tasks.loop(seconds=300)  # Check every 5 minutes
     async def check_work_timers(self):
-        await Account.clean_database(self.bot)
+        await Account.clean_database()
         current_time = datetime.datetime.utcnow()
         for account in Account.select().where(Account.shift_start.is_null(False)):
             elapsed_time = (current_time - account.shift_start)

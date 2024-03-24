@@ -183,7 +183,7 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def clean_database(self, ctx):
-        await Account.clean_database(self.bot)
+        await Account.clean_database()
         await ctx.send("Database cleaned of all invalid user id's")
 
     @commands.command()

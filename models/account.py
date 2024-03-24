@@ -19,10 +19,9 @@ class Account(BaseModel):
 
     @staticmethod
     async def fetch(user_id: str):
+        if not await helper.validate_user_id(BaseModel.bot, user_id):
+            return
         account, is_created = Account.get_or_create(user_id=user_id)
-        if is_created:
-            from models.assets import Assets
-            Assets.create(user_id=user_id)
         return account
 
     @staticmethod
@@ -31,11 +30,11 @@ class Account(BaseModel):
         acct.delete_instance()
 
     @staticmethod
-    async def clean_database(bot):
+    async def clean_database():
         for account in Account.select():
             attempts = 0
             while attempts < 6:
-                if not await helper.validate_user_id(bot, account.user_id):
+                if not await helper.validate_user_id(BaseModel.bot, account.user_id):
                     if attempts < 5:
                         attempts += 1
                         continue

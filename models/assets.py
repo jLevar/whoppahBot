@@ -17,10 +17,9 @@ class Assets(BaseModel):
 
     @staticmethod
     async def fetch(user_id: str):
+        if not await helper.validate_user_id(BaseModel.bot, user_id):
+            return
         assets, is_created = Assets.get_or_create(user_id=user_id)
-        if is_created:
-            from models.account import Account
-            Account.create(user_id=user_id)
         return assets
 
     @staticmethod
