@@ -7,7 +7,9 @@ New Features:
 
 Changes:
 - !leaderboard can now be sorted by different assets
-- !transfer can be used for all assets
+- !transfer
+  - Can now be used for all assets
+  - Requests confirmation before finishing transaction
 
 Bug Fixes:
 - Burger Bucks are now stored in an integer datatype

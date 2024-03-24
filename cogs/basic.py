@@ -87,3 +87,11 @@ class Basic(commands.Cog):
     @commands.command()
     async def tutorial(self, ctx):
         await ctx.send("This command gives users a starting tutorial!")
+
+    @commands.command()
+    async def dc(self, ctx):
+        await ctx.send("You sure?")
+        if not await helper.confirmation_request(ctx, text="This is a custom confirmation message", timeout=10):
+            await ctx.send("Good thing I checked.")
+            return
+        await ctx.send("Ok then.")

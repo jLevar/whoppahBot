@@ -150,6 +150,7 @@ class Economy(commands.Cog):
 
         sender = await Assets.fetch(ctx.author.id)
         receiver = await Assets.fetch(mention[2:-1])
+        receiver_name = (await self.bot.fetch_user(mention[2:-1])).name
 
         if getattr(sender, asset) < amount:
             await ctx.send("Insufficient Funds")
@@ -161,6 +162,11 @@ class Economy(commands.Cog):
 
         if not receiver or not await helper.validate_user_id(self.bot, receiver.user_id):
             await ctx.send("Recipient Unknown")
+            return
+
+        if not await helper.confirmation_request(ctx,
+                                                 text=f"Transfer {Assets.format(asset, amount)} ({asset.title()}) to {receiver_name}?",
+                                                 timeout=30):
             return
 
         await Assets.update_assets(user=receiver, **{f"{asset}_delta": amount})
