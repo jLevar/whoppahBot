@@ -46,7 +46,7 @@ def run():
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.send(f"Error: Invalid Argument Type")
         else:
-            await ctx.send(f"Unknown Error")
+            await ctx.send(f"Unknown Error (Most likely argument order)")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 

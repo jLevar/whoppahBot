@@ -131,7 +131,7 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg, append=daily_ladder_chart, sleep=1)
 
         await helper.embed_edit(embed, msg, append=f"\nCurrent Active Streak: {account.daily_streak}", sleep=1)
-        await helper.embed_edit(embed, msg, footer="Refreshes at 0:00 MST")
+        await helper.embed_edit(embed, msg, footer="Refreshes at 8:00 UTC")
 
     @staticmethod
     def daily_ladder(day: int):
@@ -431,7 +431,7 @@ class Economy(commands.Cog):
             if elapsed_hours >= account.shift_length:
                 await self.pop_work_timer(account, elapsed_time)
 
-    @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))  # 0:00 MST
+    @tasks.loop(time=datetime.time(hour=8, minute=0, tzinfo=datetime.timezone.utc))  # 2:00 MST (NO DST)
     async def refresh_daily(self):
         for person in Account.select(Account.user_id, Account.has_redeemed_daily):
             if person.has_redeemed_daily:
