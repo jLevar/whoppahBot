@@ -35,13 +35,14 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
 ### 'DISCORD.PY PLUS' ###
 
 class SecureButton(discord.ui.Button):
-    def __init__(self, ctx, label=None, emoji=None, style=None):
+    def __init__(self, ctx, user=None, label=None, emoji=None, style=None):
         super().__init__(label=label, emoji=emoji, style=style)
         self.ctx = ctx
         self.pressed = False
+        self.authorized_user = user if user else ctx.author
 
     async def verify_user(self, interaction) -> bool:
-        if interaction.user != self.ctx.author:
+        if interaction.user != self.authorized_user:
             await interaction.response.send_message("Please don't interact with other users' buttons", ephemeral=True)
             return False
         return True
@@ -49,7 +50,6 @@ class SecureButton(discord.ui.Button):
     async def callback(self, interaction):
         if not await self.verify_user(interaction):
             return False
-
         self.pressed = True
         return True
 
@@ -141,7 +141,7 @@ class ListenerField:
         return self.value.replace("<var>", str(self.var))
 
 
-async def confirmation_request(ctx, text: str = "Proceed?", timeout=60):
+async def confirmation_request(ctx, text: str = "Proceed?", timeout=60, user=None):
     embed = discord.Embed(
         colour=discord.Colour.lighter_grey(),
         title="Confirmation Request",
@@ -149,8 +149,8 @@ async def confirmation_request(ctx, text: str = "Proceed?", timeout=60):
     )
 
     buttons = [
-        SecureButton(ctx, emoji="✔", style=discord.ButtonStyle.success),
-        SecureButton(ctx, emoji="✖", style=discord.ButtonStyle.danger),
+        SecureButton(ctx, emoji="✔", style=discord.ButtonStyle.success, user=user),
+        SecureButton(ctx, emoji="✖", style=discord.ButtonStyle.danger, user=user),
     ]
 
     view = discord.ui.View()
