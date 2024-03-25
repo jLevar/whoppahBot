@@ -139,45 +139,28 @@ class Economy(commands.Cog):
 
     @commands.command(aliases=['t'], help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def transfer(self, ctx, mention, amount, asset="cash"):
-        if asset == "cash":
-            amount = float(amount) * 100
-        amount = int(amount)
+    async def transfer(self, ctx, mention, amount_given, asset_given="cash"):
+        amount_given = self._transfer_standardize(amount_given, asset_given)
 
-        if amount <= 0:
-            await ctx.send("Sorry, you can't transfer with amount <= 0!")
-            return
-
-        sender = await Assets.fetch(ctx.author.id)
-        receiver = await Assets.fetch(mention[2:-1])
         receiver_name = (await self.bot.fetch_user(mention[2:-1])).name
+        confirmation_text = f"Transfer {Assets.format(asset_given, amount_given)} in {asset_given} to {receiver_name.capitalize()}?"
 
-        if getattr(sender, asset) < amount:
-            await ctx.send("Insufficient Funds")
+        msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
+                                                  confirmation_text=confirmation_text)
+        if msg_txt:
+            await ctx.send(f"Error: {msg_txt}")
             return
 
-        if sender == receiver:
-            await ctx.send("You cannot transfer money to self")
-            return
-
-        if not receiver or not await helper.validate_user_id(self.bot, receiver.user_id):
-            await ctx.send("Recipient Unknown")
-            return
-
-        if not await helper.confirmation_request(
-                ctx, text=f"Transfer {Assets.format(asset, amount)} in {asset} to {receiver_name}?", timeout=30):
-            return
-
-        await Assets.update_assets(user=receiver, **{f"{asset}_delta": amount})
-        await Assets.update_assets(user=sender, **{f"{asset}_delta": -amount})
-
+        await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
         await ctx.send("Transfer complete!")
 
-    async def _transfer_validation(self, ctx, sender_id, receiver_id, amount, asset="cash"):
+    @staticmethod
+    def _transfer_standardize(amount, asset) -> int:
         if asset == "cash":
             amount = float(amount) * 100
-        amount = int(amount)
+        return int(amount)
 
+    async def _transfer_validation(self, ctx, sender_id, receiver_id, amount, asset="cash", confirmation_text=None):
         if amount <= 0:
             return "Sorry, you can't transfer with amount <= 0!"
 
@@ -194,19 +177,13 @@ class Economy(commands.Cog):
         if not receiver:
             return "Recipient Unknown"
 
-        confirmation_text = f"Transfer {Assets.format(asset, amount)} in {asset} to {receiver.name}?"
-
-        if not await helper.confirmation_request(ctx, text=confirmation_text, timeout=80, user=sender):
+        if not await helper.confirmation_request(ctx, text=confirmation_text, timeout=60, user=sender):
             return
 
         return
 
     @staticmethod
     async def _transfer_execute(sender_id, receiver_id, amount, asset):
-        if asset == "cash":
-            amount = float(amount) * 100
-        amount = int(amount)
-
         await Assets.update_assets(user_id=receiver_id, **{f"{asset}_delta": amount})
         await Assets.update_assets(user_id=sender_id, **{f"{asset}_delta": -amount})
 
@@ -214,14 +191,25 @@ class Economy(commands.Cog):
                       help="Usage: !exchange [recipient] [amount_given] [asset_given] [amount_received] [asset_received]")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def exchange(self, ctx, mention, amount_given, asset_given, amount_received, asset_received):
+        amount_given = self._transfer_standardize(amount_given, asset_given)
+        amount_received = self._transfer_standardize(amount_received, asset_received)
+
         # Sender Confirmation
-        msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given)
+        sender_confirm = f"<@{ctx.author.id}>\n***You* give**:\n{Assets.format(asset_given, amount_given)} in {asset_given}" \
+                         f"\n\n**They give:**\n{Assets.format(asset_received, amount_received)} in {asset_received}"
+
+        msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
+                                                  confirmation_text=sender_confirm)
         if msg_txt:
             await ctx.send(f"Error: {msg_txt} [Sender -> Receiver]")
             return
 
         # Receiver Confirmation
-        msg_txt = await self._transfer_validation(ctx, mention[2:-1], ctx.author.id, amount_received, asset_received)
+        receiver_confirm = f"{mention}\n***You* give:**\n{Assets.format(asset_received, amount_received)} in {asset_received}" \
+                           f"\n\n**They give:**\n{Assets.format(asset_given, amount_given)} in {asset_given}"
+
+        msg_txt = await self._transfer_validation(ctx, mention[2:-1], ctx.author.id, amount_received, asset_received,
+                                                  confirmation_text=receiver_confirm)
         if msg_txt:
             await ctx.send(f"Error: {msg_txt} [Sender <- Receiver]")
             return

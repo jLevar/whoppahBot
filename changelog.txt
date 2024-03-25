@@ -4,6 +4,10 @@ Version 1.1
 New Features:
 - Added new finite assets that you can obtain! Including:
   - Gold, silver, and more!
+- !exchange
+  - A two-way transfer of any asset you want!
+  - Want to request an exchange of $249.99 for 3 oz of Billy's gold?
+    - Run `!exchange @billy 249.99 cash 3 gold`
 
 Changes:
 - !leaderboard can now be sorted by different assets
