@@ -10,8 +10,9 @@ logger = settings.logging.getLogger('bot')
 class Account(BaseModel):
     user_id: str = peewee.CharField(primary_key=True, max_length=255)
     job_title: str = peewee.CharField(max_length=255, default="Unemployed")
-    shift_start: float = peewee.DateTimeField(null=True)
-    shift_length: int = peewee.IntegerField(null=True)
+    action_start: float = peewee.DateTimeField(null=True)
+    action_length: int = peewee.IntegerField(null=True)
+    action_type: str = peewee.CharField(max_length=255, null=True)
     has_redeemed_daily: bool = peewee.BooleanField(default=0)
     daily_allocated_bets: int = peewee.IntegerField(default=150)
     daily_streak: int = peewee.IntegerField(default=0)
@@ -46,7 +47,7 @@ class Account(BaseModel):
 
     @staticmethod
     async def update_acct(user_id=None, account=None, **kwargs):
-        expected_args = ['job_title', 'shift_start', 'shift_length', 'has_redeemed_daily',
+        expected_args = ['job_title', 'action_start', 'action_length', 'action_type', 'has_redeemed_daily',
                          'daily_allocated_bets', 'daily_allocated_bets_delta', 'daily_streak', 'daily_streak_delta',
                          'main_xp', 'main_xp_delta']
         acct = account or await Account.fetch(user_id=user_id)

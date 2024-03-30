@@ -54,9 +54,10 @@ class Assets(BaseModel):
 
     @staticmethod
     def format(asset_type: str, balance: int) -> str:
+        balance = int(balance)
         if asset_type == "cash":
-            dollars = int(balance // 100)
-            cents = int(balance % 100)
+            dollars = balance // 100
+            cents = balance % 100
 
             dollar_str = ""
             while dollars > 0:
