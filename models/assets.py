@@ -11,21 +11,28 @@ class UnsignedIntegerField(peewee.IntegerField):
 
 # noinspection PyTypeChecker
 class Assets(BaseModel):
-    user = peewee.ForeignKeyField(Account, to_field='user_id', backref='inventory', primary_key=True)
-    cash = UnsignedIntegerField(default=0)
-    gold = UnsignedIntegerField(default=0)
+    user: str = peewee.ForeignKeyField(Account, to_field='user_id', null=True)
+    entity_id: str = peewee.CharField(max_length=255, null=True)
+    cash: int = UnsignedIntegerField(default=0)
+    gold: int = UnsignedIntegerField(default=0)
 
     @staticmethod
-    async def fetch(user_id: str):
-        if not await helper.validate_user_id(BaseModel.bot, user_id):
-            return
-        assets, is_created = Assets.get_or_create(user_id=user_id)
+    async def fetch(id_str: str, is_entity: bool = False):
+        if is_entity:
+            assets, is_created = Assets.get_or_create(entity_id=id_str)
+        else:
+            if not await helper.validate_user_id(BaseModel.bot, id_str):
+                return
+            assets, is_created = Assets.get_or_create(user_id=id_str)
         return assets
 
     @staticmethod
-    async def update_assets(user_id=None, user=None, **kwargs):
+    async def update_assets(user=None, user_id=None, entity_id=None, **kwargs):
         expected_args = ['cash', 'cash_delta', 'gold', 'gold_delta']
-        user = user or await Assets.fetch(user_id=user_id)
+
+        assets = user or await Assets.fetch(user_id)
+        if not assets:
+            assets = await Assets.fetch(entity_id, is_entity=True)
 
         for key, value in kwargs.items():
             if key not in expected_args:
@@ -37,18 +44,20 @@ class Assets(BaseModel):
 
                 # Parameters ending in _delta are meant to modify without overwriting existing data
                 if key[-6:] == '_delta':
-                    curr_data = getattr(user, key[:-6])
-                    setattr(user, key[:-6], curr_data + value)
+                    curr_data = getattr(assets, key[:-6])
+                    setattr(assets, key[:-6], curr_data + value)
                 else:
-                    setattr(user, key, value)
-        user.save()
+                    setattr(assets, key, value)
+        assets.save()
 
     @staticmethod
     async def top_users(num_users: int, column="cash"):
         if column == 'cash':
-            return [(user.user_id, user.cash) for user in Assets.select().order_by(-Assets.cash)][:num_users]
+            return [(user.user_id, user.cash) for user in
+                    Assets.select().where(Assets.user_id.is_null(False)).order_by(-Assets.cash)][:num_users]
         elif column == 'gold':
-            return [(user.user_id, user.gold) for user in Assets.select().order_by(-Assets.gold)][:num_users]
+            return [(user.user_id, user.gold) for user in
+                    Assets.select().where(Assets.user_id.is_null(False)).order_by(-Assets.gold)][:num_users]
         else:
             raise AttributeError("Called Assets.users_by_column() with bad column arg")
 
@@ -77,3 +86,8 @@ class Assets(BaseModel):
         if asset_type == "cash":
             amount = float(amount) * 100
         return int(amount)
+
+    @staticmethod
+    async def from_entity(user, entity_id, amount, asset):
+        await Assets.update_assets(entity_id=entity_id, **{f"{asset}_delta": -amount})
+        await Assets.update_assets(user=user, **{f"{asset}_delta": amount})

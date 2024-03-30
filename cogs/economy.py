@@ -5,6 +5,7 @@ from discord.ext import commands, tasks
 
 import helper
 import settings
+from cogs.actions import Actions
 from models.account import Account
 from models.assets import Assets
 
@@ -123,7 +124,7 @@ class Economy(commands.Cog):
                       help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def transfer(self, ctx, mention, amount_given, asset_given="cash"):
-        amount_given = Assets.standardize(amount_given, asset_given)
+        amount_given = Assets.standardize(asset_given, amount_given)
 
         receiver_name = (await self.bot.fetch_user(mention[2:-1])).name
         confirmation_text = f"Transfer {Assets.format(asset_given, amount_given)} in {asset_given} to {receiver_name.capitalize()}?"
@@ -197,44 +198,6 @@ class Economy(commands.Cog):
 
         await ctx.send("Exchange Complete!")
 
-    @commands.command(brief="Requests promotion from BK")
-    async def promotion(self, ctx):
-        account = await Account.fetch(ctx.author.id)
-        user_assets = await Assets.fetch(ctx.author.id)
-        embed = discord.Embed(
-            colour=discord.Colour.blue(),
-            title="Promotion Request",
-            description=""
-        )
-        msg = await ctx.send(embed=embed)
-
-        await helper.embed_edit(embed, msg, append="Promotion Request Received...\n\n", sleep=3)
-        await helper.embed_edit(embed, msg, append="Checking qualifications...\n\n", sleep=2)
-
-        jobs_list = [*self.jobs, "MAX"]
-        next_job = jobs_list[jobs_list.index(account.job_title) + 1]
-
-        if next_job == "MAX":
-            await helper.embed_edit(embed, msg, append="Sorry, but there is no opening for you at this time.", sleep=2)
-            await helper.embed_edit(embed, msg, footer="Note: You have the best job currently in the game")
-            return
-
-        requirements = self.jobs[next_job]["requirements"]
-
-        if user_assets.cash >= requirements["balance"] and account.main_xp >= requirements["xp"]:
-            await Account.update_acct(account=account, job_title=next_job)
-            await helper.embed_edit(embed, msg,
-                                    append=f"Congratulations! Your job title is now: {next_job}\n\n",
-                                    sleep=2)
-            await helper.embed_edit(embed, msg,
-                                    append=f"Your salary is now: {Assets.format('cash', self.jobs[next_job]['salary'])} an hour!\n\n")
-        else:
-            await helper.embed_edit(embed, msg,
-                                    append="Sorry, but we will not be moving forward with your promotion at this time.",
-                                    sleep=2)
-            await helper.embed_edit(embed, msg,
-                                    footer=f"Hint: you need {Assets.format('cash', requirements['balance'])} and {requirements['xp']}xp to get the next job")
-
     @commands.command(aliases=["store"], brief="Opens BK menu to buy food")
     async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
@@ -296,10 +259,13 @@ class Economy(commands.Cog):
         async def checkout(interaction, _embed):
             cost = total_cost.var
             if cost > user_assets.cash:
-                await interaction.response.send_message("Insufficient Funds", ephemeral=True)
+                _embed.add_field(name=f"Insufficient Funds",
+                                 value=f"Your Balance: {Assets.format('cash', user_assets.cash)}")
+                msg = await interaction.original_response()
+                await msg.edit(embed=embed)
             else:
                 old_bal = user_assets.cash
-                await Assets.update_assets(user=user_assets, cash_delta=-cost)
+                await Assets.from_entity(user=user_assets, entity_id="BK", amount=-cost, asset='cash')
                 await Account.update_acct(account=account, main_xp_delta=total_xp.var)
                 _embed.add_field(name=f"Transaction Complete",
                                  value=f"Starting Balance: {Assets.format('cash', old_bal)}\n"

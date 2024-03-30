@@ -16,6 +16,7 @@ async def setup(bot):
 
 
 class Actions(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
         self.jobs = {
@@ -76,6 +77,44 @@ class Actions(commands.Cog):
                                   action_type="work")
 
         await ctx.send("You started working!")
+
+    @commands.command(brief="Requests promotion from BK")
+    async def promotion(self, ctx):
+        account = await Account.fetch(ctx.author.id)
+        user_assets = await Assets.fetch(ctx.author.id)
+        embed = discord.Embed(
+            colour=discord.Colour.blue(),
+            title="Promotion Request",
+            description=""
+        )
+        msg = await ctx.send(embed=embed)
+
+        await helper.embed_edit(embed, msg, append="Promotion Request Received...\n\n", sleep=3)
+        await helper.embed_edit(embed, msg, append="Checking qualifications...\n\n", sleep=2)
+
+        jobs_list = [*self.jobs, "MAX"]
+        next_job = jobs_list[jobs_list.index(account.job_title) + 1]
+
+        if next_job == "MAX":
+            await helper.embed_edit(embed, msg, append="Sorry, but there is no opening for you at this time.", sleep=2)
+            await helper.embed_edit(embed, msg, footer="Note: You have the best job currently in the game")
+            return
+
+        requirements = self.jobs[next_job]["requirements"]
+
+        if user_assets.cash >= requirements["balance"] and account.main_xp >= requirements["xp"]:
+            await Account.update_acct(account=account, job_title=next_job)
+            await helper.embed_edit(embed, msg,
+                                    append=f"Congratulations! Your job title is now: {next_job}\n\n",
+                                    sleep=2)
+            await helper.embed_edit(embed, msg,
+                                    append=f"Your salary is now: {Assets.format('cash', self.jobs[next_job]['salary'])} an hour!\n\n")
+        else:
+            await helper.embed_edit(embed, msg,
+                                    append="Sorry, but we will not be moving forward with your promotion at this time.",
+                                    sleep=2)
+            await helper.embed_edit(embed, msg,
+                                    footer=f"Hint: you need {Assets.format('cash', requirements['balance'])} and {requirements['xp']}xp to get the next job")
 
     @commands.command(aliases=['m'], brief="Starts dig for gold", help="Usage: !mine [Action Duration (hours)]")
     async def mine(self, ctx, num_hours: int = 0):

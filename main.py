@@ -36,17 +36,19 @@ def run():
     async def on_command_error(ctx, error):
         logger.info(f"Error: [{type(error)}\t{error}] is being handled globally")
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Error: Missing Argument!")
+            await ctx.send("`Error: Missing Argument`")
         elif isinstance(error, commands.errors.NotOwner):
-            await ctx.send("Error: Invalid Permissions!")
+            await ctx.send("`Error: Invalid Permissions`")
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"Cooldown expires in {error.retry_after:.3f}s")
+            await ctx.send(f"`Cooldown expires in {error.retry_after:.3f}s`")
         elif isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"Error: Unknown Command!")
+            await ctx.send(f"`Error: Unknown Command`")
         elif isinstance(error, commands.errors.BadArgument):
-            await ctx.send(f"Error: Invalid Argument Type")
+            await ctx.send(f"`Error: Invalid Argument Type`")
+        elif isinstance(error, commands.errors.CommandInvokeError):
+            await ctx.send(f"`Error: Command Invoke Error`")
         else:
-            await ctx.send(f"Unknown Error (Most likely argument order)")
+            await ctx.send(f"`Error`")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 
