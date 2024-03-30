@@ -55,14 +55,18 @@ class Assets(BaseModel):
     @staticmethod
     def format(asset_type: str, balance: int) -> str:
         if asset_type == "cash":
-            if balance % 100 == 0:
-                return f"${balance // 100}.00"
-            elif balance % 100 < 10:
-                return f"${balance // 100}.0{balance % 100}"
-            else:
-                return f"${balance // 100}.{balance % 100}"
+            dollars = int(balance // 100)
+            cents = int(balance % 100)
+
+            dollar_str = ""
+            while dollars > 0:
+                dollar_str = f"{dollars % 1000:03}," + dollar_str
+                dollars //= 1000
+
+            dollar_str = dollar_str[:-1].lstrip("0") if dollar_str else "0"
+
+            return f"${dollar_str}.{cents:02}"
         elif asset_type == "gold":
             return f"{balance} oz"
         else:
             return f"{balance}"
-

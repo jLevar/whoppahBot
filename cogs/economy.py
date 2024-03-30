@@ -275,9 +275,11 @@ class Economy(commands.Cog):
             return
 
         elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
-        if elapsed_time / datetime.timedelta(minutes=1) < 1:
-            await ctx.send("You must work at least one minute before you cancel!")
+        elapsed_seconds = elapsed_time / datetime.timedelta(seconds=1)
+        if elapsed_seconds < 10:
+            await ctx.send(f"Please wait at least 10 seconds before cancelling your shift ({elapsed_seconds:.2}s)")
             return
+
         await self.pop_work_timer(account, elapsed_time)
         await ctx.send("Work cancel successful!")
 
