@@ -195,28 +195,26 @@ class Dev(commands.Cog):
     @commands.command(hidden=True, aliases=["sea"])
     @commands.is_owner()
     async def set_entity_asset(self, ctx, entity_id: str = "", flag: str = None, data=None):
+        entity_id = entity_id.upper()
+
         if not data:
             await ctx.send("Invalid data argument")
             return
 
-        if flag not in ["-c", "-tc", "-tg"]:
+        valid_flags = {
+            "-c": ("cash", "cash_delta", "by"),
+            "-tc": ("cash", "cash", "to"),
+            "-tg": ("gold", "gold", "to"),
+            "-ts": ("silver", "silver", "to")
+        }
+
+        if flag not in valid_flags:
             await ctx.send("Invalid flag")
             return
 
-        if flag == "-c":
-            operation = "cash by"
-            data = Assets.standardize('cash', data)
-            await Assets.update_assets(entity_id=entity_id, cash_delta=data)
-        elif flag == "-tc":
-            operation = "total cash to"
-            data = Assets.standardize('cash', data)
-            await Assets.update_assets(entity_id=entity_id, cash=data)
-        elif flag == "-tg":
-            operation = "total gold to"
-            data = Assets.standardize('gold', data)
-            await Assets.update_assets(entity_id=entity_id, gold=data)
-        else:
-            await ctx.send("This block should be unreachable")
-            return
+        asset_type, update_column, operation = valid_flags[flag]
 
-        await ctx.send(f"Changed ID={entity_id}'s {operation} {data}")
+        data = Assets.standardize(asset_type, data)
+        await Assets.update_assets(entity_id=entity_id, **{update_column: data})
+
+        await ctx.send(f"Changed ID={entity_id}'s {asset_type} {operation} {Assets.format(asset_type, data)}")

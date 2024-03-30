@@ -1,4 +1,5 @@
 import datetime
+import random
 
 import discord
 from discord.ext import commands, tasks
@@ -174,11 +175,20 @@ class Actions(commands.Cog):
 
         elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
 
-        gold_rate = 0.125
-        gold_earned = elapsed_hours * gold_rate
         xp_earned = int(elapsed_hours * 21)
 
+        gold_rate = 12.5
+        silver_rate = 34
+
+        gold_earned, silver_earned = 0, 0
+        for i in range(int(elapsed_hours)):
+            if random.randrange(100) < gold_rate:
+                gold_earned += 1
+            if random.randrange(100) < silver_rate:
+                silver_earned += 1
+
         await Assets.from_entity(user=user_assets, entity_id="TERRA", amount=gold_earned, asset='gold')
+        await Assets.from_entity(user=user_assets, entity_id="TERRA", amount=silver_earned, asset='silver')
         await Account.update_acct(account=account, main_xp_delta=xp_earned)
 
         embed = discord.Embed(
@@ -186,7 +196,8 @@ class Actions(commands.Cog):
             title=f"Dig of {datetime.datetime.now():%m-%d-%Y}"
         )
 
-        embed.add_field(name="You Earned:", value=f"{Assets.format('gold', gold_earned)} gold\n{xp_earned} XP")
+        embed.add_field(name="You Earned:", value=f"{Assets.format('gold', gold_earned)} gold\n"
+                                                  f"{Assets.format('silver', silver_earned)} silver\n{xp_earned} XP")
         await user.send(embed=embed)
 
     async def pop_actions(self, account, elapsed_time):

@@ -1,6 +1,7 @@
 import re
 
 import peewee
+from discord.ext import commands
 
 import helper
 from models.base import BaseModel
@@ -17,11 +18,12 @@ class Assets(BaseModel):
     entity_id: str = peewee.CharField(max_length=255, null=True)
     cash: int = UnsignedIntegerField(default=0)
     gold: int = UnsignedIntegerField(default=0)
+    silver: int = UnsignedIntegerField(default=0)
 
     @staticmethod
     async def fetch(id_str: str, is_entity: bool = False):
         if is_entity:
-            assets, is_created = Assets.get_or_create(entity_id=id_str)
+            assets = Assets.get(entity_id=id_str)
         else:
             if not await helper.validate_user_id(BaseModel.bot, id_str):
                 return
@@ -29,8 +31,12 @@ class Assets(BaseModel):
         return assets
 
     @staticmethod
+    async def create_entity(entity_id):
+        Assets.create(entity_id=entity_id)
+
+    @staticmethod
     async def update_assets(user=None, user_id=None, entity_id=None, **kwargs):
-        expected_args = ['cash', 'cash_delta', 'gold', 'gold_delta']
+        expected_args = ['cash', 'cash_delta', 'gold', 'gold_delta', 'silver', 'silver_delta']
 
         assets = user or await Assets.fetch(user_id)
         if not assets:
@@ -54,14 +60,13 @@ class Assets(BaseModel):
 
     @staticmethod
     async def top_users(num_users: int, column="cash"):
-        if column == 'cash':
-            return [(user.user_id, user.cash) for user in
-                    Assets.select().where(Assets.user_id.is_null(False)).order_by(-Assets.cash)][:num_users]
-        elif column == 'gold':
-            return [(user.user_id, user.gold) for user in
-                    Assets.select().where(Assets.user_id.is_null(False)).order_by(-Assets.gold)][:num_users]
-        else:
-            raise AttributeError("Called Assets.users_by_column() with bad column arg")
+        if column not in Assets._meta.fields:  # Check if column exists in model
+            raise commands.errors.BadArgument("Invalid column name")
+
+        column_attr = getattr(Assets, column)
+        query = Assets.select().where(Assets.user_id.is_null(False)).order_by(-column_attr)
+
+        return [(user.user_id, getattr(user, column)) for user in query][:num_users]
 
     @staticmethod
     def format(asset_type: str, balance: int) -> str:
@@ -70,7 +75,7 @@ class Assets(BaseModel):
             dollars = balance // 100
             cents = balance % 100
             return f"${dollars:,}.{cents:02}"
-        elif asset_type == "gold":
+        elif asset_type == "gold" or asset_type == "silver":
             return f"{balance:,} oz"
         else:
             return f"{balance:,}"

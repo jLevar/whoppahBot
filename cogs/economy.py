@@ -5,7 +5,6 @@ from discord.ext import commands, tasks
 
 import helper
 import settings
-from cogs.actions import Actions
 from models.account import Account
 from models.assets import Assets
 
@@ -249,15 +248,21 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed, view=view)
 
-    @commands.command(brief="Retrieve entity info")
-    async def edgar(self, ctx, entity_id: str, asset_type: str = "cash"):
+    @commands.command(brief="Retrieve entity info", help=f"Usage: !edgar [entity_id] <asset_type>")
+    async def edgar(self, ctx, entity_id: str = commands.parameter(description=f"Such as: GOV, BK, CASINO"),
+                    asset_type: str = "cash"):
         entity_id = entity_id.upper()
 
         if entity_id == "TERRA" and ctx.author.id != settings.OWNER_ID:
             await ctx.send("`Error: Requested Info With Insufficient Clearance`")
             return
 
-        entity = await Assets.fetch(id_str=entity_id, is_entity=True)
+        try:
+            entity = await Assets.fetch(id_str=entity_id, is_entity=True)
+        except Assets.DoesNotExist:
+            await ctx.send("`Error: Invalid Entity ID`")
+            return
+
         balance = getattr(entity, asset_type)
 
         embed = discord.Embed(

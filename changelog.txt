@@ -4,8 +4,16 @@ Version 1.1
 New Features:
 - Added new finite assets that you can obtain! Including:
   - Gold, silver, and more!
+  - Implemented Law of Conservation of Assets.
+    - Meaning assets aren't be created or destroyed, only moved around
+- !edgar
+  - All business entities have assets which they use for daily operations
+  - To view public financial information, use EDGAR!
+  - Want to know how much cash Burger King has?
+    - Run `!edgar BK cash`
 - !mine
-  - Think of it like '!work' but for gold!
+  - Think of it like '!work' but for gold and silver!
+  - Look out for a future update where mining boosts your mining skill!
 - !exchange
   - A two-way transfer of any asset you want!
   - Want to request an exchange of $249.99 for 3 oz of Billy's gold?
