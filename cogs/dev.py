@@ -3,7 +3,6 @@ from discord.ext import commands
 
 import helper
 import settings
-from cogs.actions import Actions
 from cogs.casino import Casino
 from models.account import Account
 from models.assets import Assets
@@ -193,9 +192,31 @@ class Dev(commands.Cog):
         await ctx.send("Shutting down...")
         await helper.safe_shutdown(self.bot)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["sea"])
     @commands.is_owner()
-    async def clear_all_actions(self, ctx):
-        for account in Account.select().where(Account.action_start.is_null(False)):
-            await Actions.pop_action_time(account, account.action_length)
-        await ctx.send("Cleared all actions!")
+    async def set_entity_asset(self, ctx, entity_id: str = "", flag: str = None, data=None):
+        if not data:
+            await ctx.send("Invalid data argument")
+            return
+
+        if flag not in ["-c", "-tc", "-tg"]:
+            await ctx.send("Invalid flag")
+            return
+
+        if flag == "-c":
+            operation = "cash by"
+            data = Assets.standardize('cash', data)
+            await Assets.update_assets(entity_id=entity_id, cash_delta=data)
+        elif flag == "-tc":
+            operation = "total cash to"
+            data = Assets.standardize('cash', data)
+            await Assets.update_assets(entity_id=entity_id, cash=data)
+        elif flag == "-tg":
+            operation = "total gold to"
+            data = Assets.standardize('gold', data)
+            await Assets.update_assets(entity_id=entity_id, gold=data)
+        else:
+            await ctx.send("This block should be unreachable")
+            return
+
+        await ctx.send(f"Changed ID={entity_id}'s {operation} {data}")

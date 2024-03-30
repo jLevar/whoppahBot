@@ -100,7 +100,7 @@ class Casino(commands.Cog):
                                                 f"{Assets.format('cash', -amount)}\n\n", sleep=2)
 
         await Account.update_acct(account=account, daily_allocated_bets_delta=-1)
-        await Assets.update_assets(user=account_assets, cash_delta=amount)
+        await Assets.from_entity(user=account_assets, entity_id="CASINO", amount=amount)
         await helper.embed_edit(embed, msg, f"I hope to see another deal is in our future")
 
         if account.daily_allocated_bets <= 0:
@@ -155,7 +155,7 @@ class Casino(commands.Cog):
             amount = -amount  # User lost coin flip, they will be given the negative amount they bet
 
         await Account.update_acct(account=account, daily_allocated_bets_delta=-1)
-        await Assets.update_assets(user=account_assets, cash_delta=amount)
+        await Assets.from_entity(user=account_assets, entity_id="CASINO", amount=amount)
 
         if amount > 0:
             embed.description += f"Congratulations, you won {Assets.format('cash', amount)}"

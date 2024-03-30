@@ -22,7 +22,7 @@ class Economy(commands.Cog):
         self.refresh_daily.start()
 
     ## COMMANDS
-    @commands.command(aliases=['bal', 'b'], brief="Displays current asset balance")
+    @commands.command(aliases=['bal', 'b'], brief="Displays asset balance")
     async def balance(self, ctx, asset_type: str = "cash", mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
         user_assets = await Assets.fetch(user_id)
@@ -55,7 +55,7 @@ class Economy(commands.Cog):
         embed.set_footer(text=f"\nRequested by {ctx.author}")
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['lb'], brief="Displays top users by asset")
+    @commands.command(aliases=['lb'], brief="Displays top users")
     async def leaderboard(self, ctx, sort_asset="cash"):
         embed = discord.Embed(
             colour=discord.Colour.dark_green(),
@@ -76,7 +76,7 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="Grants free gift each day")
+    @commands.command(brief="Grants gift each day")
     async def daily(self, ctx):
         embed = discord.Embed(
             color=discord.Colour.light_grey(),
@@ -94,7 +94,7 @@ class Economy(commands.Cog):
             daily_streak = account.daily_streak + 1
             daily_cash = self.daily_ladder(daily_streak)
             daily_xp = 50
-            await Assets.update_assets(user=user_assets, cash_delta=daily_cash * 100)
+            await Assets.from_entity(user=user_assets, entity_id="GOV", amount=daily_cash * 100)
             await Account.update_acct(account=account, main_xp_delta=daily_xp, has_redeemed_daily=1,
                                       daily_streak_delta=1)
             await helper.embed_edit(embed, msg,
@@ -116,11 +116,7 @@ class Economy(commands.Cog):
         await helper.embed_edit(embed, msg, append=f"\nCurrent Active Streak: {account.daily_streak}", sleep=1)
         await helper.embed_edit(embed, msg, footer="Refreshes at 8:00 UTC")
 
-    @staticmethod
-    def daily_ladder(day: int):
-        return (((day - 1) % 7) * day) + 50
-
-    @commands.command(aliases=['t'], brief="Transfers assets to another user",
+    @commands.command(aliases=['t'], brief="Transfers assets",
                       help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def transfer(self, ctx, mention, amount_given, asset_given="cash"):
@@ -138,35 +134,7 @@ class Economy(commands.Cog):
         await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
         await ctx.send("Transfer complete!")
 
-    async def _transfer_validation(self, ctx, sender_id, receiver_id, amount, asset="cash", confirmation_text=None,
-                                   timeout=30):
-        if amount <= 0:
-            return "Sorry, you can't transfer with amount <= 0!"
-
-        sender = await self.bot.fetch_user(sender_id)
-        sender_data = await Assets.fetch(sender_id)
-        receiver = await self.bot.fetch_user(receiver_id)
-
-        if getattr(sender_data, asset) < amount:
-            return "Insufficient Funds"
-
-        if sender == receiver:
-            return "You cannot transfer money to self"
-
-        if not receiver:
-            return "Recipient Unknown"
-
-        if not await helper.confirmation_request(ctx, text=confirmation_text, timeout=timeout, user=sender):
-            return "Timed Out"
-
-        return
-
-    @staticmethod
-    async def _transfer_execute(sender_id, receiver_id, amount, asset):
-        await Assets.update_assets(user_id=receiver_id, **{f"{asset}_delta": amount})
-        await Assets.update_assets(user_id=sender_id, **{f"{asset}_delta": -amount})
-
-    @commands.command(aliases=['ex'], brief="Initiates exchange of assets with another user",
+    @commands.command(aliases=['ex'], brief="Initiates asset exchange",
                       help="Usage: !exchange [recipient] [amount_given] [asset_given] [amount_received] [asset_received]")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def exchange(self, ctx, mention, amount_given, asset_given, amount_received, asset_received):
@@ -198,7 +166,7 @@ class Economy(commands.Cog):
 
         await ctx.send("Exchange Complete!")
 
-    @commands.command(aliases=["store"], brief="Opens BK menu to buy food")
+    @commands.command(aliases=["store"], brief="Opens BK menu")
     async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
         user_assets = await Assets.fetch(ctx.author.id)
@@ -281,6 +249,60 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed, view=view)
 
+    @commands.command(brief="Retrieve entity info")
+    async def edgar(self, ctx, entity_id: str, asset_type: str = "cash"):
+        entity_id = entity_id.upper()
+
+        if entity_id == "TERRA" and ctx.author.id != settings.OWNER_ID:
+            await ctx.send("`Error: Requested Info With Insufficient Clearance`")
+            return
+
+        entity = await Assets.fetch(id_str=entity_id, is_entity=True)
+        balance = getattr(entity, asset_type)
+
+        embed = discord.Embed(
+            colour=discord.Colour.blurple(),
+            title=f"{entity_id}'s {asset_type.title()} Balance:",
+            description=f"# {Assets.format(asset_type, balance)}"
+        )
+        embed.set_footer(text=f"\nRequested by {ctx.author}")
+
+        await ctx.send(embed=embed)
+
+    ## HELPER METHODS
+    @staticmethod
+    def daily_ladder(day: int):
+        return (((day - 1) % 7) * day) + 50
+
+    async def _transfer_validation(self, ctx, sender_id, receiver_id, amount, asset="cash", confirmation_text=None,
+                                   timeout=30):
+        if amount <= 0:
+            return "Sorry, you can't transfer with amount <= 0!"
+
+        sender = await self.bot.fetch_user(sender_id)
+        sender_data = await Assets.fetch(sender_id)
+        receiver = await self.bot.fetch_user(receiver_id)
+
+        if getattr(sender_data, asset) < amount:
+            return "Insufficient Funds"
+
+        if sender == receiver:
+            return "You cannot transfer money to self"
+
+        if not receiver:
+            return "Recipient Unknown"
+
+        if not await helper.confirmation_request(ctx, text=confirmation_text, timeout=timeout, user=sender):
+            return "Timed Out"
+
+        return
+
+    @staticmethod
+    async def _transfer_execute(sender_id, receiver_id, amount, asset):
+        await Assets.update_assets(user_id=receiver_id, **{f"{asset}_delta": amount})
+        await Assets.update_assets(user_id=sender_id, **{f"{asset}_delta": -amount})
+
+    ## TASKS
     @tasks.loop(time=datetime.time(hour=8, minute=0, tzinfo=datetime.timezone.utc))  # 2:00 MST (NO DST)
     async def refresh_daily(self):
         for person in Account.select(Account.user_id, Account.has_redeemed_daily):

@@ -29,6 +29,15 @@ class Actions(commands.Cog):
         self.check_action_times.start()
 
     ## COMMANDS
+    @commands.command(brief="Shows action status")
+    async def status(self, ctx):
+        account = await Account.fetch(ctx.author.id)
+        if account.action_start is not None:
+            await self.send_action_status(ctx, account)
+        else:
+            await ctx.send("You currently aren't performing any action. Here are some commands to get you started:")
+            await ctx.invoke(self.bot.get_command('help'), command="Actions")
+
     @commands.command(brief="Cancels current action")
     async def cancel(self, ctx):
         user_id = ctx.author.id
@@ -50,9 +59,9 @@ class Actions(commands.Cog):
                                                  user=user):
             return
 
-        await self.pop_action_time(account, elapsed_time)
+        await self.pop_actions(account, elapsed_time)
 
-    @commands.command(aliases=['w'], brief="Starts shift at BK", help="Usage: !work [Shift Duration (hours)]")
+    @commands.command(aliases=['w'], brief="Starts BK shift", help="Usage: !work [Shift Duration (hours)]")
     async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = await Account.fetch(user_id)
@@ -78,7 +87,7 @@ class Actions(commands.Cog):
 
         await ctx.send("You started working!")
 
-    @commands.command(brief="Requests promotion from BK")
+    @commands.command(brief="Requests BK promotion")
     async def promotion(self, ctx):
         account = await Account.fetch(ctx.author.id)
         user_assets = await Assets.fetch(ctx.author.id)
@@ -116,7 +125,7 @@ class Actions(commands.Cog):
             await helper.embed_edit(embed, msg,
                                     footer=f"Hint: you need {Assets.format('cash', requirements['balance'])} and {requirements['xp']}xp to get the next job")
 
-    @commands.command(aliases=['m'], brief="Starts dig for gold", help="Usage: !mine [Action Duration (hours)]")
+    @commands.command(aliases=['m'], brief="Starts gold dig", help="Usage: !mine [Action Duration (hours)]")
     async def mine(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = await Account.fetch(user_id)
@@ -139,7 +148,7 @@ class Actions(commands.Cog):
         await ctx.send("You started mining!")
 
     ## HELPER METHODS
-    async def pop_work_time(self, account, elapsed_time):
+    async def work_result(self, account, elapsed_time):
         user = await self.bot.fetch_user(account.user_id)
         user_assets = await Assets.fetch(account.user_id)
 
@@ -148,7 +157,7 @@ class Actions(commands.Cog):
         money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
         xp_earned = int(elapsed_hours * 30)
 
-        await Assets.update_assets(user=user_assets, cash_delta=money_earned)
+        await Assets.from_entity(user=user_assets, entity_id="BK", amount=money_earned, asset='cash')
         await Account.update_acct(account=account, main_xp_delta=xp_earned)
 
         embed = discord.Embed(
@@ -159,7 +168,7 @@ class Actions(commands.Cog):
         embed.add_field(name="You Earned:", value=f"{Assets.format('cash', money_earned)}\n{xp_earned} xp")
         await user.send(embed=embed)
 
-    async def pop_mine_time(self, account, elapsed_time):
+    async def mine_result(self, account, elapsed_time):
         user = await self.bot.fetch_user(account.user_id)
         user_assets = await Assets.fetch(account.user_id)
 
@@ -169,7 +178,7 @@ class Actions(commands.Cog):
         gold_earned = elapsed_hours * gold_rate
         xp_earned = int(elapsed_hours * 21)
 
-        await Assets.update_assets(user=user_assets, gold_delta=gold_earned)
+        await Assets.from_entity(user=user_assets, entity_id="TERRA", amount=gold_earned, asset='gold')
         await Account.update_acct(account=account, main_xp_delta=xp_earned)
 
         embed = discord.Embed(
@@ -180,12 +189,12 @@ class Actions(commands.Cog):
         embed.add_field(name="You Earned:", value=f"{Assets.format('gold', gold_earned)} gold\n{xp_earned} XP")
         await user.send(embed=embed)
 
-    async def pop_action_time(self, account, elapsed_time):
+    async def pop_actions(self, account, elapsed_time):
         action_type = account.action_type
         if action_type == "work":
-            await self.pop_work_time(account, elapsed_time)
+            await self.work_result(account, elapsed_time)
         elif action_type == "mine":
-            await self.pop_mine_time(account, elapsed_time)
+            await self.mine_result(account, elapsed_time)
         await Account.update_acct(account=account, action_start="NULL", action_length="NULL", action_type="NULL")
 
     async def send_action_status(self, ctx, account):
@@ -194,7 +203,7 @@ class Actions(commands.Cog):
         percent_left = (elapsed_hours / account.action_length)
 
         if percent_left > 1:
-            await self.pop_action_time(account, elapsed_time)
+            await self.pop_actions(account, elapsed_time)
             return
 
         blank_bar = "# [----------------]"
@@ -228,8 +237,16 @@ class Actions(commands.Cog):
             logger.debug(f"{account.user_id} | {account.action_type} | "
                          f"{account.action_start} | {account.action_length} | {elapsed_hours}")
             if elapsed_hours >= account.action_length:
-                await self.pop_action_time(account, elapsed_time)
+                await self.pop_actions(account, elapsed_time)
 
     @check_action_times.before_loop
     async def before_check_action_times(self):
         await self.bot.wait_until_ready()
+
+    ## DEV COMMANDS
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def clear_all_actions(self, ctx):
+        for account in Account.select().where(Account.action_start.is_null(False)):
+            await self.pop_actions(account, datetime.timedelta(hours=account.action_length))
+        await ctx.send("Cleared all actions!")

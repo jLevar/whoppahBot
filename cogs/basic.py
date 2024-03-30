@@ -43,7 +43,7 @@ class Basic(commands.Cog):
         await drumbledwarf.send("11:11!")
         logger.info("11:11!")
 
-    @commands.command(brief="Sends link to suggestion form")
+    @commands.command(brief="Links suggestion form")
     async def suggestion(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.purple(),
@@ -54,7 +54,7 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="Sends link to GitHub repo")
+    @commands.command(brief="Links GitHub repo")
     async def github(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.orange(),
@@ -65,7 +65,7 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="Sends link to bug report form")
+    @commands.command(brief="Links bug report form")
     async def bug(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.dark_purple(),

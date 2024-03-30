@@ -69,19 +69,11 @@ class Assets(BaseModel):
         if asset_type == "cash":
             dollars = balance // 100
             cents = balance % 100
-
-            dollar_str = ""
-            while dollars > 0:
-                dollar_str = f"{dollars % 1000:03}," + dollar_str
-                dollars //= 1000
-
-            dollar_str = dollar_str[:-1].lstrip("0") if dollar_str else "0"
-
-            return f"${dollar_str}.{cents:02}"
+            return f"${dollars:,}.{cents:02}"
         elif asset_type == "gold":
-            return f"{balance} oz"
+            return f"{balance:,} oz"
         else:
-            return f"{balance}"
+            return f"{balance:,}"
 
     @staticmethod
     def standardize(asset_type: str, amount) -> int:
@@ -93,6 +85,6 @@ class Assets(BaseModel):
             return int(amount)
 
     @staticmethod
-    async def from_entity(user, entity_id, amount, asset):
+    async def from_entity(user, entity_id, amount, asset="cash"):
         await Assets.update_assets(entity_id=entity_id, **{f"{asset}_delta": -amount})
         await Assets.update_assets(user=user, **{f"{asset}_delta": amount})

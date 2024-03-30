@@ -8,6 +8,8 @@ load_dotenv()
 
 DISCORD_API_SECRET = os.getenv("DISCORD_API_TOKEN")
 
+OWNER_ID = 350393195085168650
+
 BASE_DIR = pathlib.Path(__file__).parent
 
 COGS_DIR = BASE_DIR / "cogs"
