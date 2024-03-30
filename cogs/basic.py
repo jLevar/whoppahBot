@@ -27,17 +27,13 @@ class Basic(commands.Cog):
     async def joke(self, ctx):
         await ctx.send("How many doctors does it take to screw in a lightbulb? Two, one to screw it in and the other to"
                        " hold the ladder 😂😂😂😂😂😂😂😂")
-        await ctx.message.author.send("Please don't ask me to tell any more jokes, it's so embarrassing")
 
     @commands.command()
     async def say(self, ctx, *what):
         if what == "@everyone":
             await ctx.send("not cool!")
         elif what == ():
-            # NOTE - This error message is a prank DM
-            with open("error_message.txt", "r") as f:
-                error_message = f.read()
-            await ctx.message.author.send(error_message)
+            await ctx.send(f"!say requires argument")
         else:
             await ctx.send(f"> {' '.join(what)}\n-{ctx.message.author}")
 

@@ -4,18 +4,24 @@ Version 1.1
 New Features:
 - Added new finite assets that you can obtain! Including:
   - Gold, silver, and more!
+- !mine
+  - Think of it like '!work' but for gold!
 - !exchange
   - A two-way transfer of any asset you want!
   - Want to request an exchange of $249.99 for 3 oz of Billy's gold?
     - Run `!exchange @billy 249.99 cash 3 gold`
 
 Changes:
+- Re-hauled the action system:
+  - Now, !work is just one of the types of actions you can do
+  - You can only perform one action at a time, so choose wisely!
 - !leaderboard can now be sorted by different assets
 - !transfer
   - Can now be used for all assets
   - Requests confirmation before finishing transaction
+- !deal_with_the_devil/!dwtd is now: !dice
 
 Bug Fixes:
 - Burger Bucks are now stored in an integer datatype
   - This means your cash balance as displayed is 100% accurate, eliminating weird off-by-one-cent errors
-  - Any weird rounding errors you might have encountered are also now eliminated.
+  - Any weird rounding errors you might have encountered when moving money around are also now eliminated.

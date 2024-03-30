@@ -71,3 +71,9 @@ class Assets(BaseModel):
             return f"{balance} oz"
         else:
             return f"{balance}"
+
+    @staticmethod
+    def standardize(asset_type: str, amount) -> int:
+        if asset_type == "cash":
+            amount = float(amount) * 100
+        return int(amount)

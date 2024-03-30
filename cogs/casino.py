@@ -5,6 +5,7 @@ from discord.ext import commands, tasks
 
 import helper
 from models.account import Account
+from models.assets import Assets
 import asyncio
 
 
@@ -36,10 +37,17 @@ class Casino(commands.Cog):
         await user.send(embed=embed)
 
     ## COMMANDS
-    @commands.command(aliases=['dwtd'], help="Usage: !dwtd [Choice (1-6)] [Amount to Bet]")
+    @commands.command(hidden=True, help="Antiquated gateway for `!dice`")
+    async def dwtd(self, ctx, choice: int, amount):
+        await ctx.send("Warning: Command name won't be supported in future. Please use `!dice` instead")
+        await ctx.invoke(self.bot.get_command('dice'), choice=choice, amount=amount)
+
+    @commands.command(help="Usage: !dice [Choice (1-6)] [Amount to Bet]")
     @commands.cooldown(1, 7, commands.BucketType.user)
-    async def deal_with_the_devil(self, ctx, choice: int, amount: float):
+    async def dice(self, ctx, choice: int, amount):
+        amount = Assets.standardize('cash', amount)
         account = await Account.fetch(ctx.message.author.id)
+        account_assets = await Assets.fetch(ctx.message.author.id)
         embed = discord.Embed(
             colour=discord.Colour.dark_red(),
             title="A Deal with the Devil",
@@ -52,7 +60,7 @@ class Casino(commands.Cog):
         await helper.embed_edit(embed, msg, "Come to make a deal with the devil have we?\n\n", sleep=2)
 
         if amount <= 0:
-            await helper.embed_edit(embed, msg, f"You must put some skin in the game muchacho\n\n[Use !help dwtd]",
+            await helper.embed_edit(embed, msg, f"You must put some skin in the game muchacho\n\n[Use !help dice]",
                                     color=discord.Colour.darker_gray())
             return
 
@@ -67,7 +75,7 @@ class Casino(commands.Cog):
                                     color=discord.Colour.darker_gray())
             return
 
-        if amount > account.balance:
+        if amount > account_assets.cash:
             await helper.embed_edit(embed, msg, "Tried to put one past me eh?\n\n", sleep=2)
             await helper.embed_edit(embed, msg, "WELL YOU CANT BET MORE THAN YOU HAVE!!\n\n",
                                     color=discord.Colour.darker_gray())
@@ -77,21 +85,22 @@ class Casino(commands.Cog):
         die = random.randint(1, 6)
         await helper.embed_edit(embed, msg, f"The die reads {die}\n\n", sleep=2)
 
-        account = await Account.fetch(ctx.message.author.id)  # Refreshes the account to avoid money glitch??
-
         if choice == die:
             amount = amount * 6.12
             await helper.embed_edit(embed, msg,
-                                    f"It seems Madame Luck is in your throes tonight. You won ${amount:.2f}\n\n",
+                                    f"It seems Madame Luck is in your throes tonight. "
+                                    f"You won ${Assets.format('cash', amount)}\n\n",
                                     color=discord.Colour.gold(), sleep=2)
         else:
             amount = -amount
             await helper.embed_edit(embed, msg,
                                     f"It seems you lack what it takes to dance with the devil in the pale moonlight.\n\n",
                                     sleep=2)
-            await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that ${-amount:.2f}\n\n", sleep=2)
+            await helper.embed_edit(embed, msg, f"Don't worry, I'll make good use of that "
+                                                f"{Assets.format('cash', -amount)}\n\n", sleep=2)
 
-        await Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
+        await Account.update_acct(account=account, daily_allocated_bets_delta=-1)
+        await Assets.update_assets(user=account_assets, cash_delta=amount)
         await helper.embed_edit(embed, msg, f"I hope to see another deal is in our future")
 
         if account.daily_allocated_bets <= 0:
@@ -100,7 +109,9 @@ class Casino(commands.Cog):
     @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
+        amount = Assets.standardize('cash', amount)
         account = await Account.fetch(ctx.message.author.id)
+        account_assets = await Assets.fetch(ctx.message.author.id)
         embed = discord.Embed(
             colour=discord.Colour.light_grey(),
             title="A Flip of the Coin",
@@ -122,7 +133,7 @@ class Casino(commands.Cog):
             await msg.edit(embed=embed)
             return
 
-        if amount > account.balance:
+        if amount > account_assets.cash:
             embed.description += f"You don't have enough money for that..."
             embed.colour = discord.Colour.darker_gray()
             await msg.edit(embed=embed)
@@ -143,14 +154,15 @@ class Casino(commands.Cog):
         if (heads and choice == "t") or (not heads and choice == "h"):
             amount = -amount  # User lost coin flip, they will be given the negative amount they bet
 
-        await Account.update_acct(account=account, balance_delta=amount, daily_allocated_bets_delta=-1)
+        await Account.update_acct(account=account, daily_allocated_bets_delta=-1)
+        await Assets.update_assets(user=account_assets, cash_delta=amount)
 
         if amount > 0:
-            embed.description += f"Congratulations, you won ${amount:.2f}"
+            embed.description += f"Congratulations, you won ${Assets.format('cash', amount)}"
             embed.colour = discord.Colour.green()
             await msg.edit(embed=embed)
         else:
-            embed.description += f"I'll be keeping that ${-amount:.2f}"
+            embed.description += f"I'll be keeping that {Assets.format('cash', -amount)}"
             embed.colour = discord.Colour.red()
             await msg.edit(embed=embed)
 
