@@ -1,3 +1,5 @@
+import re
+
 import peewee
 
 import helper
@@ -84,8 +86,11 @@ class Assets(BaseModel):
     @staticmethod
     def standardize(asset_type: str, amount) -> int:
         if asset_type == "cash":
-            amount = float(amount) * 100
-        return int(amount)
+            amount = re.sub("[^0-9.]+", "", amount)
+            return int(float(amount) * 100)
+        else:
+            amount = re.sub("[^0-9]+", "", amount)
+            return int(amount)
 
     @staticmethod
     async def from_entity(user, entity_id, amount, asset):

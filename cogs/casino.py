@@ -108,7 +108,7 @@ class Casino(commands.Cog):
 
     @commands.command(aliases=['c'], brief="Fair coin betting game", help="Usage: !coin [Heads/Tails] [Amount to Bet]")
     @commands.cooldown(1, 3, commands.BucketType.user)
-    async def coin(self, ctx, choice: str, amount: float):
+    async def coin(self, ctx, choice: str, amount):
         amount = Assets.standardize('cash', amount)
         account = await Account.fetch(ctx.message.author.id)
         account_assets = await Assets.fetch(ctx.message.author.id)
@@ -158,7 +158,7 @@ class Casino(commands.Cog):
         await Assets.update_assets(user=account_assets, cash_delta=amount)
 
         if amount > 0:
-            embed.description += f"Congratulations, you won ${Assets.format('cash', amount)}"
+            embed.description += f"Congratulations, you won {Assets.format('cash', amount)}"
             embed.colour = discord.Colour.green()
             await msg.edit(embed=embed)
         else:

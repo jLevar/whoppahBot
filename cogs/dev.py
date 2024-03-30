@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import helper
 import settings
+from cogs.actions import Actions
 from cogs.casino import Casino
 from models.account import Account
 from models.assets import Assets
@@ -191,3 +192,10 @@ class Dev(commands.Cog):
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")
         await helper.safe_shutdown(self.bot)
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def clear_all_actions(self, ctx):
+        for account in Account.select().where(Account.action_start.is_null(False)):
+            await Actions.pop_action_time(account, account.action_length)
+        await ctx.send("Cleared all actions!")
