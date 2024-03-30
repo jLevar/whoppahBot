@@ -21,7 +21,7 @@ class Economy(commands.Cog):
         self.refresh_daily.start()
 
     ## COMMANDS
-    @commands.command(aliases=['bal', 'b'])
+    @commands.command(aliases=['bal', 'b'], brief="Displays current asset balance")
     async def balance(self, ctx, asset_type: str = "cash", mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
         user_assets = await Assets.fetch(user_id)
@@ -37,7 +37,7 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['p'])
+    @commands.command(aliases=['p'], brief="Displays user profile")
     async def profile(self, ctx, mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
         user_acc = await Account.fetch(user_id)
@@ -54,7 +54,7 @@ class Economy(commands.Cog):
         embed.set_footer(text=f"\nRequested by {ctx.author}")
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['lb'])
+    @commands.command(aliases=['lb'], brief="Displays top users by asset")
     async def leaderboard(self, ctx, sort_asset="cash"):
         embed = discord.Embed(
             colour=discord.Colour.dark_green(),
@@ -75,7 +75,7 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(brief="Grants free gift each day")
     async def daily(self, ctx):
         embed = discord.Embed(
             color=discord.Colour.light_grey(),
@@ -119,7 +119,8 @@ class Economy(commands.Cog):
     def daily_ladder(day: int):
         return (((day - 1) % 7) * day) + 50
 
-    @commands.command(aliases=['t'], help="Usage: !transfer [recipient] [amount] <asset_type>")
+    @commands.command(aliases=['t'], brief="Transfers assets to another user",
+                      help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def transfer(self, ctx, mention, amount_given, asset_given="cash"):
         amount_given = Assets.standardize(amount_given, asset_given)
@@ -164,7 +165,7 @@ class Economy(commands.Cog):
         await Assets.update_assets(user_id=receiver_id, **{f"{asset}_delta": amount})
         await Assets.update_assets(user_id=sender_id, **{f"{asset}_delta": -amount})
 
-    @commands.command(aliases=['ex'],
+    @commands.command(aliases=['ex'], brief="Initiates exchange of assets with another user",
                       help="Usage: !exchange [recipient] [amount_given] [asset_given] [amount_received] [asset_received]")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def exchange(self, ctx, mention, amount_given, asset_given, amount_received, asset_received):
@@ -196,7 +197,7 @@ class Economy(commands.Cog):
 
         await ctx.send("Exchange Complete!")
 
-    @commands.command()
+    @commands.command(brief="Requests promotion from BK")
     async def promotion(self, ctx):
         account = await Account.fetch(ctx.author.id)
         user_assets = await Assets.fetch(ctx.author.id)
@@ -234,7 +235,7 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg,
                                     footer=f"Hint: you need {Assets.format('cash', requirements['balance'])} and {requirements['xp']}xp to get the next job")
 
-    @commands.command(aliases=["store"])
+    @commands.command(aliases=["store"], brief="Opens BK menu to buy food")
     async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
         user_assets = await Assets.fetch(ctx.author.id)

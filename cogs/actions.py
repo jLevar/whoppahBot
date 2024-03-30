@@ -28,7 +28,7 @@ class Actions(commands.Cog):
         self.check_action_times.start()
 
     ## COMMANDS
-    @commands.command()
+    @commands.command(brief="Cancels current action")
     async def cancel(self, ctx):
         user_id = ctx.author.id
         user = await self.bot.fetch_user(user_id)
@@ -51,7 +51,7 @@ class Actions(commands.Cog):
 
         await self.pop_action_time(account, elapsed_time)
 
-    @commands.group(invoke_without_command=True, aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
+    @commands.command(aliases=['w'], brief="Starts shift at BK", help="Usage: !work [Shift Duration (hours)]")
     async def work(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = await Account.fetch(user_id)
@@ -77,7 +77,7 @@ class Actions(commands.Cog):
 
         await ctx.send("You started working!")
 
-    @commands.command(aliases=['m'], help="Usage: !mine [Action Duration (hours)]")
+    @commands.command(aliases=['m'], brief="Starts dig for gold", help="Usage: !mine [Action Duration (hours)]")
     async def mine(self, ctx, num_hours: int = 0):
         user_id = ctx.author.id
         account = await Account.fetch(user_id)
@@ -194,4 +194,3 @@ class Actions(commands.Cog):
     @check_action_times.before_loop
     async def before_check_action_times(self):
         await self.bot.wait_until_ready()
-

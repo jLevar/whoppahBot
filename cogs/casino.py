@@ -42,7 +42,7 @@ class Casino(commands.Cog):
         await ctx.send("Warning: Command name won't be supported in future. Please use `!dice` instead")
         await ctx.invoke(self.bot.get_command('dice'), choice=choice, amount=amount)
 
-    @commands.command(help="Usage: !dice [Choice (1-6)] [Amount to Bet]")
+    @commands.command(brief="Fair die betting game", help="Usage: !dice [Choice (1-6)] [Amount to Bet]")
     @commands.cooldown(1, 7, commands.BucketType.user)
     async def dice(self, ctx, choice: int, amount):
         amount = Assets.standardize('cash', amount)
@@ -106,7 +106,7 @@ class Casino(commands.Cog):
         if account.daily_allocated_bets <= 0:
             await self.send_gambling_psa(ctx.author)
 
-    @commands.command(aliases=['c'], help="Usage: !coin [Heads/Tails] [Amount to Bet]")
+    @commands.command(aliases=['c'], brief="Fair coin betting game", help="Usage: !coin [Heads/Tails] [Amount to Bet]")
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def coin(self, ctx, choice: str, amount: float):
         amount = Assets.standardize('cash', amount)

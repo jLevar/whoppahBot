@@ -26,7 +26,7 @@ class Dev(commands.Cog):
         if hasattr(cog_instance, "refresh_daily") and cog_instance.refresh_daily.is_running():
             cog_instance.refresh_daily.cancel()
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def load(self, ctx, cog: str):
         cog_name = f"cogs.{cog.lower()}"
@@ -38,7 +38,7 @@ class Dev(commands.Cog):
         await self.bot.load_extension(cog_name)
         await ctx.send("Loaded successfully")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def unload(self, ctx, cog: str):
         cog_name = f"cogs.{cog.lower()}"
@@ -57,7 +57,7 @@ class Dev(commands.Cog):
         await self.bot.unload_extension(cog_name)
         await ctx.send("Unloaded successfully")
 
-    @commands.command(aliases=['r'])
+    @commands.command(aliases=['r'], hidden=True)
     @commands.is_owner()
     async def reload(self, ctx, cog: str):
         if cog == "e":
@@ -76,7 +76,7 @@ class Dev(commands.Cog):
         await ctx.send("Reloaded successfully")
 
     ## ECONOMY
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def close_account(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -87,7 +87,7 @@ class Dev(commands.Cog):
         await Account.close_account(ctx.message.author.id)
         await ctx.send("await Account Closed!")
 
-    @commands.command(aliases=['cd'])
+    @commands.command(hidden=True, aliases=['cd'])
     @commands.is_owner()
     async def change_data(self, ctx, flag: str = None, data=None, mention: str = "<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -132,7 +132,7 @@ class Dev(commands.Cog):
 
         await ctx.send(f"Changed ID={user_id}'s {operation} {data}")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def gambling_psa(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -143,7 +143,7 @@ class Dev(commands.Cog):
         user = await self.bot.fetch_user(user_id)
         await Casino.send_gambling_psa(user)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def changelog(self, ctx):
         with open(settings.CHANGELOG_PATH, 'r') as file:
@@ -156,7 +156,7 @@ class Dev(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=["mdr"])
+    @commands.command(hidden=True, aliases=["mdr"])
     @commands.is_owner()
     async def manual_daily_reset(self, ctx, flag: str = None):
         if flag == "-m":
@@ -173,20 +173,20 @@ class Dev(commands.Cog):
                                               daily_streak=0)
             await ctx.send("Everyone's daily has been reset")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     # Set my daily allocated bets to N
     async def smdabtn(self, ctx, n):
         await Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def clean_database(self, ctx):
         await Account.clean_database()
         await ctx.send("Database cleaned of all invalid user id's")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")

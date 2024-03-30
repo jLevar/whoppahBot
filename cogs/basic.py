@@ -20,15 +20,15 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if "burger" in message.content and random.randint(0, 10) == 15:
-            await message.add_reaction("😂")
+        if "burger" in message.content and random.randint(0, 2) == 1:
+            await message.add_reaction("🍔")
 
-    @commands.command()
+    @commands.command(brief="Tells a joke")
     async def joke(self, ctx):
         await ctx.send("How many doctors does it take to screw in a lightbulb? Two, one to screw it in and the other to"
                        " hold the ladder 😂😂😂😂😂😂😂😂")
 
-    @commands.command()
+    @commands.command(brief="Parrots what you say")
     async def say(self, ctx, *what):
         if what == "@everyone":
             await ctx.send("not cool!")
@@ -43,7 +43,7 @@ class Basic(commands.Cog):
         await drumbledwarf.send("11:11!")
         logger.info("11:11!")
 
-    @commands.command()
+    @commands.command(brief="Sends link to suggestion form")
     async def suggestion(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.purple(),
@@ -54,7 +54,7 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(brief="Sends link to GitHub repo")
     async def github(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.orange(),
@@ -65,7 +65,7 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(brief="Sends link to bug report form")
     async def bug(self, ctx):
         embed = discord.Embed(
             colour=discord.Colour.dark_purple(),
@@ -76,10 +76,10 @@ class Basic(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['whoppah'])
+    @commands.command(aliases=['whoppah'], brief="Sends whoppa gif")
     async def whoppa(self, ctx):
         await ctx.send("https://tenor.com/view/whoppa-whoppah-did-you-get-a-whoppa-woppa-whopper-gif-23161878")
 
-    @commands.command()
+    @commands.command(brief="Gives tutorial for bot")
     async def tutorial(self, ctx):
         await ctx.send("This command gives users a starting tutorial!")
