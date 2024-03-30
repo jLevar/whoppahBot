@@ -36,8 +36,7 @@ class Actions(commands.Cog):
         if account.action_start is not None:
             await self.send_action_status(ctx, account)
         else:
-            await ctx.send("You currently aren't performing any action. Here are some commands to get you started:")
-            await ctx.invoke(self.bot.get_command('help'), command="Actions")
+            await ctx.reply("You currently aren't performing any action", mention_author=False)
 
     @commands.command(brief="Cancels current action")
     async def cancel(self, ctx):
@@ -46,14 +45,15 @@ class Actions(commands.Cog):
         account = await Account.fetch(user_id)
 
         if not account.action_start:
-            await ctx.send("You weren't doing anything to begin with!")
+            await ctx.reply("You weren't doing anything to begin with!", mention_author=False)
             return
 
         elapsed_time = (datetime.datetime.utcnow() - account.action_start)
         elapsed_seconds = elapsed_time / datetime.timedelta(seconds=1)
 
         if elapsed_seconds < 10:
-            await ctx.send(f"Please wait at least 10 seconds before cancelling action ({elapsed_seconds:.2}s)")
+            await ctx.reply(f"Please wait at least 10 seconds before cancelling action ({elapsed_seconds:.2}s)",
+                            mention_author=False)
             return
 
         if not await helper.confirmation_request(ctx, text=f"Cancel action '{account.action_type}'?", timeout=20,
@@ -68,7 +68,7 @@ class Actions(commands.Cog):
         account = await Account.fetch(user_id)
 
         if account.job_title == "Unemployed":
-            await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
+            await ctx.reply("You can't work until you are hired!\n*(Hint: Try !promotion)*", mention_author=False)
             return
 
         if account.action_start is not None:
@@ -76,17 +76,17 @@ class Actions(commands.Cog):
             return
 
         if num_hours < 1:
-            await ctx.send("You have to work at least 1 hour to get paid!")
+            await ctx.reply("You have to work at least 1 hour to get paid!", mention_author=False)
             return
 
         if num_hours > 24:
-            await ctx.send("You cannot work more than 24 hours in a single shift!")
+            await ctx.reply("You cannot work more than 24 hours in a single shift!", mention_author=False)
             return
 
         await Account.update_acct(account=account, action_start=datetime.datetime.utcnow(), action_length=num_hours,
                                   action_type="work")
 
-        await ctx.send("You started working!")
+        await ctx.reply("You started working!", mention_author=False)
 
     @commands.command(brief="Requests BK promotion")
     async def promotion(self, ctx):
@@ -136,17 +136,19 @@ class Actions(commands.Cog):
             return
 
         if num_hours < 1:
-            await ctx.send("You aughta mine fer at least an hour if yer expectin' any gold or such!")
+            await ctx.reply("You aughta mine fer at least an hour if yer expectin' any gold or such!",
+                            mention_author=False)
             return
 
         if num_hours > 24:
-            await ctx.send("Ev'n da finest prospectors inda West can't mine fer longer than uhday!")
+            await ctx.reply("Ev'n da finest prospectors inda West can't mine fer longer than uhday!",
+                            mention_author=False)
             return
 
         await Account.update_acct(account=account, action_start=datetime.datetime.utcnow(), action_length=num_hours,
                                   action_type="mine")
 
-        await ctx.send("You started mining!")
+        await ctx.reply("You started mining!", mention_author=False)
 
     ## HELPER METHODS
     async def work_result(self, account, elapsed_time):
@@ -260,4 +262,4 @@ class Actions(commands.Cog):
     async def clear_all_actions(self, ctx):
         for account in Account.select().where(Account.action_start.is_null(False)):
             await self.pop_actions(account, datetime.timedelta(hours=account.action_length))
-        await ctx.send("Cleared all actions!")
+        await ctx.reply("Cleared all actions!")

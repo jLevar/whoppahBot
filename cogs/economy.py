@@ -21,7 +21,8 @@ class Economy(commands.Cog):
         self.refresh_daily.start()
 
     ## COMMANDS
-    @commands.command(aliases=['bal', 'b'], brief="Displays asset balance")
+    @commands.command(aliases=['bal', 'b'], brief="Displays asset balance",
+                      help="Usage: !balance [asset_type] <mention>")
     async def balance(self, ctx, asset_type: str = "cash", mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
         user_assets = await Assets.fetch(user_id)
@@ -47,8 +48,9 @@ class Economy(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour.dark_blue(),
             title=f"Profile",
-            description=f"Balance: {Assets.format('cash', user_assets.cash)}\nJob Title: {user_acc.job_title}\nDaily Streak: {user_acc.daily_streak}"
-                        f"\nXP: {user_acc.main_xp}\nGold: {Assets.format('gold', user_assets.gold)}"
+            description=f"Balance: {Assets.format('cash', user_assets.cash)}\nJob Title: {user_acc.job_title}\n"
+                        f"Daily Streak: {user_acc.daily_streak}\nXP: {user_acc.main_xp}\n"
+                        f"Gold: {Assets.format('gold', user_assets.gold)}\nSilver: {Assets.format('silver', user_assets.silver)}"
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
@@ -127,18 +129,18 @@ class Economy(commands.Cog):
         msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
                                                   confirmation_text=confirmation_text)
         if msg_txt:
-            await ctx.send(f"Error: {msg_txt}")
+            await ctx.reply(f"Error: {msg_txt}", mention_author=False)
             return
 
         await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
-        await ctx.send("Transfer complete!")
+        await ctx.reply("Transfer complete!", mention_author=False)
 
     @commands.command(aliases=['ex'], brief="Initiates asset exchange",
                       help="Usage: !exchange [recipient] [amount_given] [asset_given] [amount_received] [asset_received]")
     @commands.cooldown(1, 5, commands.BucketType.guild)
     async def exchange(self, ctx, mention, amount_given, asset_given, amount_received, asset_received):
-        amount_given = Assets.standardize(amount_given, asset_given)
-        amount_received = Assets.standardize(amount_received, asset_received)
+        amount_given = Assets.standardize(asset_given, amount_given)
+        amount_received = Assets.standardize(asset_received, amount_received)
 
         # Sender Confirmation
         sender_confirm = f"<@{ctx.author.id}>\n***You* give**:\n{Assets.format(asset_given, amount_given)} in {asset_given}" \
@@ -147,7 +149,7 @@ class Economy(commands.Cog):
         msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
                                                   confirmation_text=sender_confirm)
         if msg_txt:
-            await ctx.send(f"Error: {msg_txt} [Sender -> Receiver]")
+            await ctx.reply(f"Error: {msg_txt} [Sender -> Receiver]", mention_author=False)
             return
 
         # Receiver Confirmation
@@ -157,13 +159,13 @@ class Economy(commands.Cog):
         msg_txt = await self._transfer_validation(ctx, mention[2:-1], ctx.author.id, amount_received, asset_received,
                                                   confirmation_text=receiver_confirm, timeout=600)
         if msg_txt:
-            await ctx.send(f"Error: {msg_txt} [Sender <- Receiver]")
+            await ctx.reply(f"Error: {msg_txt} [Sender <- Receiver]", mention_author=False)
             return
 
         await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
         await self._transfer_execute(mention[2:-1], ctx.author.id, amount_received, asset_received)
 
-        await ctx.send("Exchange Complete!")
+        await ctx.reply("Exchange Complete!", mention_author=False)
 
     @commands.command(aliases=["store"], brief="Opens BK menu")
     async def shop(self, ctx):
@@ -254,13 +256,13 @@ class Economy(commands.Cog):
         entity_id = entity_id.upper()
 
         if entity_id == "TERRA" and ctx.author.id != settings.OWNER_ID:
-            await ctx.send("`Error: Requested Info With Insufficient Clearance`")
+            await ctx.reply("`Error: Requested Info With Insufficient Clearance`", mention_author=False)
             return
 
         try:
             entity = await Assets.fetch(id_str=entity_id, is_entity=True)
         except Assets.DoesNotExist:
-            await ctx.send("`Error: Invalid Entity ID`")
+            await ctx.reply("`Error: Invalid Entity ID`", mention_author=False)
             return
 
         balance = getattr(entity, asset_type)

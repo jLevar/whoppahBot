@@ -1,7 +1,7 @@
 import random
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 import helper
 from models.account import Account
@@ -39,7 +39,8 @@ class Casino(commands.Cog):
     ## COMMANDS
     @commands.command(hidden=True, help="Antiquated gateway for `!dice`")
     async def dwtd(self, ctx, choice: int, amount):
-        await ctx.send("Warning: Command name won't be supported in future. Please use `!dice` instead")
+        await ctx.reply("Warning: Command name won't be supported in future. Please use `!dice` instead",
+                        mention_author=False)
         await ctx.invoke(self.bot.get_command('dice'), choice=choice, amount=amount)
 
     @commands.command(brief="Fair die betting game", help="Usage: !dice [Choice (1-6)] [Amount to Bet]")
@@ -89,7 +90,7 @@ class Casino(commands.Cog):
             amount = amount * 6.12
             await helper.embed_edit(embed, msg,
                                     f"It seems Madame Luck is in your throes tonight. "
-                                    f"You won ${Assets.format('cash', amount)}\n\n",
+                                    f"You won {Assets.format('cash', amount)}\n\n",
                                     color=discord.Colour.gold(), sleep=2)
         else:
             amount = -amount

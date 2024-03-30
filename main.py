@@ -36,19 +36,19 @@ def run():
     async def on_command_error(ctx, error):
         logger.info(f"Error: [{type(error)}\t{error}] is being handled globally")
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("`Error: Missing Argument`")
+            await ctx.reply("`Error: Missing Argument`", mention_author=False)
         elif isinstance(error, commands.errors.NotOwner):
-            await ctx.send("`Error: Invalid Permissions`")
+            await ctx.reply("`Error: Invalid Permissions`", mention_author=False)
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"`Cooldown expires in {error.retry_after:.3f}s`")
+            await ctx.reply(f"`Cooldown expires in {error.retry_after:.3f}s`", mention_author=False)
         elif isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"`Error: Unknown Command`")
+            await ctx.reply(f"`Error: Unknown Command`", mention_author=False)
         elif isinstance(error, commands.errors.BadArgument):
-            await ctx.send(f"`Error: Invalid Argument Type`")
+            await ctx.reply(f"`Error: Invalid Argument Type`", mention_author=False)
         elif isinstance(error, commands.errors.CommandInvokeError):
-            await ctx.send(f"`Error: Command Invoke Error`")
+            await ctx.reply(f"`Error: Command Invoke Error`", mention_author=False)
         else:
-            await ctx.send(f"`Error`")
+            await ctx.reply(f"`Error`")
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
 

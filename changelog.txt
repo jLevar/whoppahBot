@@ -27,7 +27,8 @@ Changes:
 - !transfer
   - Can now be used for all assets
   - Requests confirmation before finishing transaction
-- !deal_with_the_devil/!dwtd is now: !dice
+- !deal_with_the_devil/!dwtd has been renamed
+  - Use `!dice` from now on
 
 Bug Fixes:
 - Burger Bucks are now stored in an integer datatype

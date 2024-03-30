@@ -69,7 +69,7 @@ class Assets(BaseModel):
         return [(user.user_id, getattr(user, column)) for user in query][:num_users]
 
     @staticmethod
-    def format(asset_type: str, balance: int) -> str:
+    def format(asset_type: str, balance) -> str:
         balance = int(balance)
         if asset_type == "cash":
             dollars = balance // 100
