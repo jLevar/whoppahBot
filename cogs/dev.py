@@ -3,8 +3,9 @@ from discord.ext import commands
 
 import helper
 import settings
-from cogs import gambling
+from cogs.casino import Casino
 from models.account import Account
+from models.assets import Assets
 
 logger = settings.logging.getLogger('bot')
 
@@ -25,7 +26,7 @@ class Dev(commands.Cog):
         if hasattr(cog_instance, "refresh_daily") and cog_instance.refresh_daily.is_running():
             cog_instance.refresh_daily.cancel()
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def load(self, ctx, cog: str):
         cog_name = f"cogs.{cog.lower()}"
@@ -37,7 +38,7 @@ class Dev(commands.Cog):
         await self.bot.load_extension(cog_name)
         await ctx.send("Loaded successfully")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def unload(self, ctx, cog: str):
         cog_name = f"cogs.{cog.lower()}"
@@ -56,7 +57,7 @@ class Dev(commands.Cog):
         await self.bot.unload_extension(cog_name)
         await ctx.send("Unloaded successfully")
 
-    @commands.command(aliases=['r'])
+    @commands.command(aliases=['r'], hidden=True)
     @commands.is_owner()
     async def reload(self, ctx, cog: str):
         if cog == "e":
@@ -75,7 +76,7 @@ class Dev(commands.Cog):
         await ctx.send("Reloaded successfully")
 
     ## ECONOMY
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def close_account(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -86,7 +87,7 @@ class Dev(commands.Cog):
         await Account.close_account(ctx.message.author.id)
         await ctx.send("await Account Closed!")
 
-    @commands.command(aliases=['cd'])
+    @commands.command(hidden=True, aliases=['cd'])
     @commands.is_owner()
     async def change_data(self, ctx, flag: str = None, data=None, mention: str = "<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -105,12 +106,14 @@ class Dev(commands.Cog):
 
         if flag == "-b":
             operation = "balance by"
-            data = float(data)
-            await Account.update_acct(user_id=user_id, balance_delta=data)
+            data = int(data)
+            data *= 100
+            await Assets.update_assets(user_id=user_id, cash_delta=data)
         elif flag == "-tb":
             operation = "total balance to"
-            data = float(data)
-            await Account.update_acct(user_id=user_id, balance=data)
+            data = int(data)
+            data *= 100
+            await Assets.update_assets(user_id=user_id, cash=data)
         elif flag == "-ds":
             operation = "daily streak to"
             data = int(data)
@@ -129,7 +132,7 @@ class Dev(commands.Cog):
 
         await ctx.send(f"Changed ID={user_id}'s {operation} {data}")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def gambling_psa(self, ctx, mention="<@350393195085168650>"):
         user_id = mention[2:-1]
@@ -138,9 +141,9 @@ class Dev(commands.Cog):
             return
 
         user = await self.bot.fetch_user(user_id)
-        await gambling.Gambling.send_gambling_psa(user)
+        await Casino.send_gambling_psa(user)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def changelog(self, ctx):
         with open(settings.CHANGELOG_PATH, 'r') as file:
@@ -153,7 +156,7 @@ class Dev(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=["mdr"])
+    @commands.command(hidden=True, aliases=["mdr"])
     @commands.is_owner()
     async def manual_daily_reset(self, ctx, flag: str = None):
         if flag == "-m":
@@ -170,21 +173,48 @@ class Dev(commands.Cog):
                                               daily_streak=0)
             await ctx.send("Everyone's daily has been reset")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     # Set my daily allocated bets to N
     async def smdabtn(self, ctx, n):
         await Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def clean_database(self, ctx):
-        await Account.clean_database(self.bot)
+        await Account.clean_database()
         await ctx.send("Database cleaned of all invalid user id's")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def shutdown(self, ctx):
         await ctx.send("Shutting down...")
         await helper.safe_shutdown(self.bot)
+
+    @commands.command(hidden=True, aliases=["sea"])
+    @commands.is_owner()
+    async def set_entity_asset(self, ctx, entity_id: str = "", flag: str = None, data=None):
+        entity_id = entity_id.upper()
+
+        if not data:
+            await ctx.send("Invalid data argument")
+            return
+
+        valid_flags = {
+            "-c": ("cash", "cash_delta", "by"),
+            "-tc": ("cash", "cash", "to"),
+            "-tg": ("gold", "gold", "to"),
+            "-ts": ("silver", "silver", "to")
+        }
+
+        if flag not in valid_flags:
+            await ctx.send("Invalid flag")
+            return
+
+        asset_type, update_column, operation = valid_flags[flag]
+
+        data = Assets.standardize(asset_type, data)
+        await Assets.update_assets(entity_id=entity_id, **{update_column: data})
+
+        await ctx.send(f"Changed ID={entity_id}'s {asset_type} {operation} {Assets.format(asset_type, data)}")

@@ -6,16 +6,9 @@ from discord.ext import commands, tasks
 import helper
 import settings
 from models.account import Account
+from models.assets import Assets
 
 logger = settings.logging.getLogger('bot')
-
-
-async def convert_time(time, units="seconds"):
-    for i in range(2):
-        if time >= 60:
-            time /= 60
-            units = "minutes" if units == "seconds" else "hours"
-    return time, units
 
 
 async def setup(bot):
@@ -23,69 +16,68 @@ async def setup(bot):
 
 
 class Economy(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
-        self.jobs = {
-            "Unemployed": {"salary": 0, "requirements": {"balance": 0, "xp": 0}},
-            "Dishwasher": {"salary": 7.25, "requirements": {"balance": 0, "xp": 0}},
-            "Burger Flipper": {"salary": 13.50, "requirements": {"balance": 750, "xp": 2500}},
-            "Grill Master": {"salary": 16.75, "requirements": {"balance": 5000, "xp": 15000}},
-            "Shift Lead": {"salary": 20.00, "requirements": {"balance": 25000, "xp": 50000}}
-        }
-        self.daily_locked_users = []
-        self.check_work_timers.start()
         self.refresh_daily.start()
 
     ## COMMANDS
-    @commands.command(aliases=['bal', 'b'])
-    async def balance(self, ctx, mention: str = None):
+    @commands.command(aliases=['bal', 'b'], brief="Displays asset balance",
+                      help="Usage: !balance [asset_type] <mention>")
+    async def balance(self, ctx, asset_type: str = "cash", mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
-        account = await Account.fetch(user_id)
+        user_assets = await Assets.fetch(user_id)
         user = await self.bot.fetch_user(user_id)
+        balance = getattr(user_assets, asset_type)
 
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
-            title=f"Balance: ${account.balance:.2f}",
+            title=f"{asset_type.title()} Balance: {Assets.format(asset_type, balance)}",
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
+
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['p'])
+    @commands.command(aliases=['p'], brief="Displays user profile")
     async def profile(self, ctx, mention: str = None):
         user_id = mention[2:-1] if mention else ctx.author.id
-        account = await Account.fetch(user_id)
+        user_acc = await Account.fetch(user_id)
+        user_assets = await Assets.fetch(user_id)
         user = await self.bot.fetch_user(user_id)
 
         embed = discord.Embed(
             colour=discord.Colour.dark_blue(),
             title=f"Profile",
-            description=f"Balance: ${account.balance:.2f}\nJob Title: {account.job_title}\nDaily Streak: {account.daily_streak}"
-                        f"\nXP: {account.main_xp}"
+            description=f"Balance: {Assets.format('cash', user_assets.cash)}\nJob Title: {user_acc.job_title}\n"
+                        f"Daily Streak: {user_acc.daily_streak}\nXP: {user_acc.main_xp}\n"
+                        f"Gold: {Assets.format('gold', user_assets.gold)}\nSilver: {Assets.format('silver', user_assets.silver)}"
         )
         embed.set_author(name=f"{user.name.capitalize()}", icon_url=user.display_avatar.url)
         embed.set_footer(text=f"\nRequested by {ctx.author}")
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['lb'])
-    async def leaderboard(self, ctx):
+    @commands.command(aliases=['lb'], brief="Displays top users")
+    async def leaderboard(self, ctx, sort_asset="cash"):
         embed = discord.Embed(
             colour=discord.Colour.dark_green(),
-            title="Top 10 Richest Users",
+            title=f"Top 10 Users by {sort_asset.title()}",
             description=""
         )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
-        for i, user_id in enumerate(await Account.leaderboard(10)):
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
+
+        for i, user_data in enumerate(await Assets.top_users(10, column=sort_asset)):
+            user_id = user_data[0]
+            user_value = user_data[1]
             user = await self.bot.fetch_user(user_id)
-            account = await Account.fetch(user_id)
+
             if user.id == ctx.author.id:
-                embed.description += f"**{i + 1} |\t{user.name} -- ${account.balance:.2f}**\n"
+                embed.description += f"**{i + 1} |\t{user.name} -- {Assets.format(sort_asset, user_value)}**\n"
             else:
-                embed.description += f"{i + 1} |\t{user.name} -- ${account.balance:.2f}\n"
+                embed.description += f"{i + 1} |\t{user.name} -- {Assets.format(sort_asset, user_value)}\n"
+
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(brief="Grants gift each day")
     async def daily(self, ctx):
         embed = discord.Embed(
             color=discord.Colour.light_grey(),
@@ -95,6 +87,7 @@ class Economy(commands.Cog):
         msg = await ctx.send(embed=embed)
 
         account = await Account.fetch(ctx.author.id)
+        user_assets = await Assets.fetch(ctx.author.id)
 
         if account.has_redeemed_daily:
             await helper.embed_edit(embed, msg, append="You have already redeemed your daily gift today.\n", sleep=1)
@@ -102,8 +95,8 @@ class Economy(commands.Cog):
             daily_streak = account.daily_streak + 1
             daily_cash = self.daily_ladder(daily_streak)
             daily_xp = 50
-            await Account.update_acct(account=account, balance_delta=daily_cash, main_xp_delta=daily_xp,
-                                      has_redeemed_daily=1,
+            await Assets.from_entity(user=user_assets, entity_id="GOV", amount=daily_cash * 100)
+            await Account.update_acct(account=account, main_xp_delta=daily_xp, has_redeemed_daily=1,
                                       daily_streak_delta=1)
             await helper.embed_edit(embed, msg,
                                     append=f"Nice to have you back! Here's today gift!\n",
@@ -122,141 +115,62 @@ class Economy(commands.Cog):
             await helper.embed_edit(embed, msg, append=daily_ladder_chart, sleep=1)
 
         await helper.embed_edit(embed, msg, append=f"\nCurrent Active Streak: {account.daily_streak}", sleep=1)
-        await helper.embed_edit(embed, msg, footer="Refreshes at 0:00 MST")
+        await helper.embed_edit(embed, msg, footer="Refreshes at 8:00 UTC")
 
-    @staticmethod
-    def daily_ladder(day: int):
-        return (((day - 1) % 7) * day) + 50
-
-    @commands.command(aliases=['t'])
+    @commands.command(aliases=['t'], brief="Transfers assets",
+                      help="Usage: !transfer [recipient] [amount] <asset_type>")
     @commands.cooldown(1, 5, commands.BucketType.guild)
-    async def transfer(self, ctx, amount: float, mention):
-        if amount <= 0:
-            await ctx.send("Sorry, you have to send more than $0")
+    async def transfer(self, ctx, mention, amount_given, asset_given="cash"):
+        amount_given = Assets.standardize(asset_given, amount_given)
+
+        receiver_name = (await self.bot.fetch_user(mention[2:-1])).name
+        confirmation_text = f"Transfer {Assets.format(asset_given, amount_given)} in {asset_given} to {receiver_name.capitalize()}?"
+
+        msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
+                                                  confirmation_text=confirmation_text)
+        if msg_txt:
+            await ctx.reply(f"Error: {msg_txt}", mention_author=False)
             return
 
-        sender = await Account.fetch(ctx.author.id)
-        receiver = await Account.fetch(mention[2:-1])
+        await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
+        await ctx.reply("Transfer complete!", mention_author=False)
 
-        if sender == receiver:
-            await ctx.send("You cannot transfer money to self")
+    @commands.command(aliases=['ex'], brief="Initiates asset exchange",
+                      help="Usage: !exchange [recipient] [amount_given] [asset_given] [amount_received] [asset_received]")
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    async def exchange(self, ctx, mention, amount_given, asset_given, amount_received, asset_received):
+        amount_given = Assets.standardize(asset_given, amount_given)
+        amount_received = Assets.standardize(asset_received, amount_received)
+
+        # Sender Confirmation
+        sender_confirm = f"<@{ctx.author.id}>\n***You* give**:\n{Assets.format(asset_given, amount_given)} in {asset_given}" \
+                         f"\n\n**They give:**\n{Assets.format(asset_received, amount_received)} in {asset_received}"
+
+        msg_txt = await self._transfer_validation(ctx, ctx.author.id, mention[2:-1], amount_given, asset_given,
+                                                  confirmation_text=sender_confirm)
+        if msg_txt:
+            await ctx.reply(f"Error: {msg_txt} [Sender -> Receiver]", mention_author=False)
             return
 
-        if sender.balance < amount:
-            await ctx.send("Insufficient Funds")
+        # Receiver Confirmation
+        receiver_confirm = f"{mention}\n***You* give:**\n{Assets.format(asset_received, amount_received)} in {asset_received}" \
+                           f"\n\n**They give:**\n{Assets.format(asset_given, amount_given)} in {asset_given}"
+
+        msg_txt = await self._transfer_validation(ctx, mention[2:-1], ctx.author.id, amount_received, asset_received,
+                                                  confirmation_text=receiver_confirm, timeout=600)
+        if msg_txt:
+            await ctx.reply(f"Error: {msg_txt} [Sender <- Receiver]", mention_author=False)
             return
 
-        if not await helper.validate_user_id(self.bot, receiver):
-            await ctx.send("Recipient Unknown")
-            return
+        await self._transfer_execute(ctx.author.id, mention[2:-1], amount_given, asset_given)
+        await self._transfer_execute(mention[2:-1], ctx.author.id, amount_received, asset_received)
 
-        await Account.update_acct(account=receiver, balance_delta=amount)
-        await Account.update_acct(account=sender, balance_delta=-amount)
+        await ctx.reply("Exchange Complete!", mention_author=False)
 
-        await ctx.send("Transfer complete!")
-
-    @commands.group(invoke_without_command=True, aliases=['w'], help="Usage: !work [Shift Duration (hours)]")
-    async def work(self, ctx, num_hours: int = 0):
-        user_id = ctx.author.id
-        account = await Account.fetch(user_id)
-
-        if account.job_title == "Unemployed":
-            await ctx.send("You can't work until you are hired!\n*(Hint: Try !promotion)*")
-            return
-
-        if account.shift_start is not None:
-            elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
-            elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
-            percent_left = (elapsed_hours / account.shift_length)
-
-            if percent_left > 1:
-                await self.pop_work_timer(account, elapsed_time)
-                await ctx.send("Your shift's up!")
-                return
-
-            blank_bar = "# [----------------]"
-            progress_bar = blank_bar.replace("-", "#", int(blank_bar.count("-") * percent_left))
-            elapsed_seconds = elapsed_time / datetime.timedelta(seconds=1)
-            et, eu = await convert_time(elapsed_seconds, "seconds")
-
-            embed = discord.Embed(
-                title=f"Your shift is {(percent_left * 100):.2f}% complete",
-                colour=discord.Colour.blue(),
-                description=f"You started your {account.shift_length} hour shift {et:.2f} {eu} ago\n"
-                            f"{progress_bar}"
-            )
-            await ctx.send(embed=embed)
-            return
-
-        if num_hours < 1:
-            await ctx.send("You have to work at least 1 hour to get paid!")
-            return
-
-        if num_hours > 24:
-            await ctx.send("You cannot work more than 24 hours in a single shift!")
-            return
-
-        await Account.update_acct(account=account, shift_start=datetime.datetime.utcnow(), shift_length=num_hours)
-
-        await ctx.send("You started working!")
-
-    @work.command()
-    async def cancel(self, ctx):
-        await ctx.send("Cancelling your shift...")
-        user_id = ctx.author.id
-        account = await Account.fetch(user_id)
-
-        if not account.shift_start:
-            await ctx.send("You weren't working to begin with fool!")
-            return
-
-        elapsed_time = (datetime.datetime.utcnow() - account.shift_start)
-        if elapsed_time / datetime.timedelta(minutes=1) < 1:
-            await ctx.send("You must work at least one minute before you cancel!")
-            return
-        await self.pop_work_timer(account, elapsed_time)
-        await ctx.send("Work cancel successful!")
-
-    @commands.command()
-    async def promotion(self, ctx):
-        account = await Account.fetch(ctx.author.id)
-        embed = discord.Embed(
-            colour=discord.Colour.blue(),
-            title="Promotion Request",
-            description=""
-        )
-        msg = await ctx.send(embed=embed)
-
-        await helper.embed_edit(embed, msg, append="Promotion Request Received...\n\n", sleep=3)
-        await helper.embed_edit(embed, msg, append="Checking qualifications...\n\n", sleep=2)
-
-        jobs_list = [*self.jobs, "MAX"]
-        next_job = jobs_list[jobs_list.index(account.job_title) + 1]
-
-        if next_job == "MAX":
-            await helper.embed_edit(embed, msg, append="Sorry, but there is no opening for you at this time.", sleep=2)
-            await helper.embed_edit(embed, msg, footer="Note: You have the best job currently in the game")
-            return
-
-        requirements = self.jobs[next_job]["requirements"]
-
-        if account.balance >= requirements["balance"] and account.main_xp >= requirements["xp"]:
-            await Account.update_acct(account=account, job_title=next_job)
-            await helper.embed_edit(embed, msg,
-                                    append=f"Congratulations! Your job title is now: {next_job}\n\n",
-                                    sleep=2)
-            await helper.embed_edit(embed, msg,
-                                    append=f"Your salary is now: {self.jobs[next_job]['salary']:.2f} an hour!\n\n")
-        else:
-            await helper.embed_edit(embed, msg,
-                                    append="Sorry, but we will not be moving forward with your promotion at this time.",
-                                    sleep=2)
-            await helper.embed_edit(embed, msg,
-                                    footer=f"Hint: you need ${requirements['balance']} and {requirements['xp']}xp to get the next job")
-
-    @commands.command(aliases=["store"])
+    @commands.command(aliases=["store"], brief="Opens BK menu")
     async def shop(self, ctx):
         account = await Account.fetch(ctx.author.id)
+        user_assets = await Assets.fetch(ctx.author.id)
 
         embed = discord.Embed(
             colour=discord.Colour.blurple(),
@@ -265,9 +179,9 @@ class Economy(commands.Cog):
         )
 
         menu = {
-            "Whoppers:": {"price": 2.25, "xp": 20},
-            "Fries:": {"price": 1.69, "xp": 15},
-            "Drink:": {"price": 1.20, "xp": 10}
+            "Whoppers:": {"price": 225, "xp": 20},
+            "Fries:": {"price": 169, "xp": 15},
+            "Drink:": {"price": 120, "xp": 10}
         }
 
         # Fields
@@ -277,9 +191,15 @@ class Economy(commands.Cog):
         embed.add_field(name="Drink:", value="0x")
 
         total_items = helper.ListenerField(embed=embed, name="Total Items:", inline=False)
-        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="$<var>", inline=False)
 
+        total_cost = helper.ListenerField(embed=embed, name="Subtotal:", value="<var>", inline=False)
         total_cost.get_delta = lambda data: menu[data["name"]]["price"]
+
+        def value_format(self):
+            return self.value.replace("<var>", f"{Assets.format('cash', self.var)}")
+
+        total_cost.value_format = value_format.__get__(total_cost, helper.ListenerField)
+
         total_xp = helper.ListenerField(embed=embed, name="Total XP:", value="<var> xp")
         total_xp.get_delta = lambda data: menu[data["name"]]["xp"]
 
@@ -307,13 +227,18 @@ class Economy(commands.Cog):
 
         async def checkout(interaction, _embed):
             cost = total_cost.var
-            if cost > account.balance:
-                await interaction.response.send_message("Insufficient Funds", ephemeral=True)
+            if cost > user_assets.cash:
+                _embed.add_field(name=f"Insufficient Funds",
+                                 value=f"Your Balance: {Assets.format('cash', user_assets.cash)}")
+                msg = await interaction.original_response()
+                await msg.edit(embed=embed)
             else:
-                old_bal = account.balance
-                await Account.update_acct(account=account, balance_delta=-cost, main_xp_delta=total_xp.var)
+                old_bal = user_assets.cash
+                await Assets.from_entity(user=user_assets, entity_id="BK", amount=-cost, asset='cash')
+                await Account.update_acct(account=account, main_xp_delta=total_xp.var)
                 _embed.add_field(name=f"Transaction Complete",
-                                 value=f"Starting Balance: ${old_bal:.2f}\nNew Balance: ${account.balance:.2f}")
+                                 value=f"Starting Balance: {Assets.format('cash', old_bal)}\n"
+                                       f"New Balance: {Assets.format('cash', user_assets.cash)}")
                 msg = await interaction.original_response()
                 await msg.edit(embed=embed)
 
@@ -325,37 +250,67 @@ class Economy(commands.Cog):
 
         await ctx.send(embed=embed, view=view)
 
-    ## HELPER METHODS
-    async def pop_work_timer(self, account, elapsed_time):
-        user = await self.bot.fetch_user(account.user_id)
-        elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
+    @commands.command(brief="Retrieve entity info", help=f"Usage: !edgar [entity_id] <asset_type>")
+    async def edgar(self, ctx, entity_id: str = commands.parameter(description=f"Such as: GOV, BK, CASINO"),
+                    asset_type: str = "cash"):
+        entity_id = entity_id.upper()
 
-        money_earned = elapsed_hours * self.jobs[account.job_title]["salary"]
-        xp_earned = int(elapsed_hours * 30)
-        await Account.update_acct(account=account, balance_delta=money_earned, main_xp_delta=xp_earned,
-                                  shift_start="NULL", shift_length="NULL")
+        if entity_id == "TERRA" and ctx.author.id != settings.OWNER_ID:
+            await ctx.reply("`Error: Requested Info With Insufficient Clearance`", mention_author=False)
+            return
+
+        try:
+            entity = await Assets.fetch(id_str=entity_id, is_entity=True)
+        except Assets.DoesNotExist:
+            await ctx.reply("`Error: Invalid Entity ID`", mention_author=False)
+            return
+
+        balance = getattr(entity, asset_type)
 
         embed = discord.Embed(
-            colour=discord.Colour.from_rgb(77, 199, 222),  # Space Blue
-            title=f"Shift for {datetime.datetime.now():%m-%d-%Y}"
+            colour=discord.Colour.blurple(),
+            title=f"{entity_id}'s {asset_type.title()} Balance:",
+            description=f"# {Assets.format(asset_type, balance)}"
         )
-        embed.add_field(name="You Earned:", value=f"${money_earned:.2f}\n{xp_earned} xp")
+        embed.set_footer(text=f"\nRequested by {ctx.author}")
 
-        await user.send(embed=embed)
+        await ctx.send(embed=embed)
+
+    ## HELPER METHODS
+    @staticmethod
+    def daily_ladder(day: int):
+        return (((day - 1) % 7) * day) + 50
+
+    async def _transfer_validation(self, ctx, sender_id, receiver_id, amount, asset="cash", confirmation_text=None,
+                                   timeout=30):
+        if amount <= 0:
+            return "Sorry, you can't transfer with amount <= 0!"
+
+        sender = await self.bot.fetch_user(sender_id)
+        sender_data = await Assets.fetch(sender_id)
+        receiver = await self.bot.fetch_user(receiver_id)
+
+        if getattr(sender_data, asset) < amount:
+            return "Insufficient Funds"
+
+        if sender == receiver:
+            return "You cannot transfer money to self"
+
+        if not receiver:
+            return "Recipient Unknown"
+
+        if not await helper.confirmation_request(ctx, text=confirmation_text, timeout=timeout, user=sender):
+            return "Timed Out"
+
+        return
+
+    @staticmethod
+    async def _transfer_execute(sender_id, receiver_id, amount, asset):
+        await Assets.update_assets(user_id=receiver_id, **{f"{asset}_delta": amount})
+        await Assets.update_assets(user_id=sender_id, **{f"{asset}_delta": -amount})
 
     ## TASKS
-    @tasks.loop(seconds=300)  # Check every 5 minutes
-    async def check_work_timers(self):
-        await Account.clean_database(self.bot)
-        current_time = datetime.datetime.utcnow()
-        for account in Account.select().where(Account.shift_start.is_null(False)):
-            elapsed_time = (current_time - account.shift_start)
-            elapsed_hours = elapsed_time / datetime.timedelta(hours=1)
-            logger.debug(f"{account.user_id} | {account.shift_start} | {account.shift_length} | {elapsed_hours}")
-            if elapsed_hours >= account.shift_length:
-                await self.pop_work_timer(account, elapsed_time)
-
-    @tasks.loop(time=datetime.time(hour=7, minute=0, tzinfo=datetime.timezone.utc))  # 0:00 MST
+    @tasks.loop(time=datetime.time(hour=8, minute=0, tzinfo=datetime.timezone.utc))  # 2:00 MST (NO DST)
     async def refresh_daily(self):
         for person in Account.select(Account.user_id, Account.has_redeemed_daily):
             if person.has_redeemed_daily:
@@ -365,10 +320,6 @@ class Economy(commands.Cog):
                                           daily_streak=0)
 
         logger.info("Daily Refresh Executed\n-----------------------------------")
-
-    @check_work_timers.before_loop
-    async def before_check_work_timers(self):
-        await self.bot.wait_until_ready()
 
     @refresh_daily.before_loop
     async def before_refresh_daily(self):

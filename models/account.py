@@ -1,38 +1,29 @@
 import peewee
+from models.base import BaseModel
 
 import helper
 import settings
 
-accounts_db = peewee.SqliteDatabase("./databases/accounts.db")
-
 logger = settings.logging.getLogger('bot')
 
 
-class Account(peewee.Model):
-    user_id: str = peewee.CharField(max_length=255, primary_key=True)
-    balance: float = peewee.FloatField()
-    job_title: str = peewee.CharField(max_length=255)
-    shift_start: float = peewee.DateTimeField()
-    shift_length: int = peewee.IntegerField()
-    has_redeemed_daily: bool = peewee.BooleanField()
-    daily_allocated_bets: int = peewee.IntegerField()
-    daily_streak: int = peewee.IntegerField()
-    main_xp: int = peewee.IntegerField()
-
-    class Meta:
-        database = accounts_db
+class Account(BaseModel):
+    user_id: str = peewee.CharField(primary_key=True, max_length=255)
+    job_title: str = peewee.CharField(max_length=255, default="Unemployed")
+    action_start: float = peewee.DateTimeField(null=True)
+    action_length: int = peewee.IntegerField(null=True)
+    action_type: str = peewee.CharField(max_length=255, null=True)
+    has_redeemed_daily: bool = peewee.BooleanField(default=0)
+    daily_allocated_bets: int = peewee.IntegerField(default=150)
+    daily_streak: int = peewee.IntegerField(default=0)
+    main_xp: int = peewee.IntegerField(default=0)
 
     @staticmethod
     async def fetch(user_id: str):
-        account, is_created = Account.get_or_create(user_id=user_id, defaults={
-            'balance': 0, 'job_title': "Unemployed", 'has_redeemed_daily': 0, "daily_allocated_bets": 150,
-            "daily_streak": 0, "main_xp": 0
-        })
+        if not await helper.validate_user_id(BaseModel.bot, user_id):
+            return
+        account, is_created = Account.get_or_create(user_id=user_id)
         return account
-
-    @staticmethod
-    async def leaderboard(num_users: int):
-        return [user.user_id for user in Account.select().order_by(-Account.balance)][:num_users]
 
     @staticmethod
     async def close_account(user_id: str):
@@ -40,11 +31,11 @@ class Account(peewee.Model):
         acct.delete_instance()
 
     @staticmethod
-    async def clean_database(bot):
+    async def clean_database():
         for account in Account.select():
             attempts = 0
             while attempts < 6:
-                if not await helper.validate_user_id(bot, account.user_id):
+                if not await helper.validate_user_id(BaseModel.bot, account.user_id):
                     if attempts < 5:
                         attempts += 1
                         continue
@@ -56,7 +47,7 @@ class Account(peewee.Model):
 
     @staticmethod
     async def update_acct(user_id=None, account=None, **kwargs):
-        expected_args = ['balance', 'balance_delta', 'job_title', 'shift_start', 'shift_length', 'has_redeemed_daily',
+        expected_args = ['job_title', 'action_start', 'action_length', 'action_type', 'has_redeemed_daily',
                          'daily_allocated_bets', 'daily_allocated_bets_delta', 'daily_streak', 'daily_streak_delta',
                          'main_xp', 'main_xp_delta']
         acct = account or await Account.fetch(user_id=user_id)

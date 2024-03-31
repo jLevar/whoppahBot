@@ -1,17 +1,36 @@
-Version 1.0.4
+Version 1.1
+** The Asset Update **
+
 New Features:
-- Experience Points! (XP)
-  - Added a new XP system that you can earn from daily, working, and...
-- !shop
-  - A new command that allows you to buy food from BK for XP!
-- !suggestion
-  - Links a Google Form where you can suggest new features and changes!
+- Added new finite assets that you can obtain! Including:
+  - Gold, silver, and more!
+  - Implemented Law of Conservation of Assets.
+    - Meaning assets aren't be created or destroyed, only moved around
+- !edgar
+  - All business entities have assets which they use for daily operations
+  - To view public financial information, use EDGAR!
+  - Want to know how much cash Burger King has?
+    - Run `!edgar BK cash`
+- !mine
+  - Think of it like '!work' but for gold and silver!
+  - Look out for a future update where mining boosts your mining skill!
+- !exchange
+  - A two-way transfer of any asset you want!
+  - Want to request an exchange of $249.99 for 3 oz of Billy's gold?
+    - Run `!exchange @billy 249.99 cash 3 gold`
 
 Changes:
-- !promotion
-  - Now in embed format
-  - Based upon both balance and xp!
-- !profile
-  - Shows daily streak and xp points
-- !work
-  - Shift paycheck is now in embed format
+- Re-hauled the action system:
+  - Now, !work is just one of the types of actions you can do
+  - You can only perform one action at a time, so choose wisely!
+- !leaderboard can now be sorted by different assets
+- !transfer
+  - Can now be used for all assets
+  - Requests confirmation before finishing transaction
+- !deal_with_the_devil/!dwtd has been renamed
+  - Use `!dice` from now on
+
+Bug Fixes:
+- Burger Bucks are now stored in an integer datatype
+  - This means your cash balance as displayed is 100% accurate, eliminating weird off-by-one-cent errors
+  - Any weird rounding errors you might have encountered when moving money around are also now eliminated.

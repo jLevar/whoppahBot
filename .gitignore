@@ -3,5 +3,5 @@
 /logs/*
 .idea/*
 __pycache__/
-/databases/
 /imgs/
+data.db

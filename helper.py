@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import datetime
 
 
 async def safe_shutdown(bot):
@@ -14,6 +15,7 @@ async def validate_user_id(bot, user_id):
     return True
 
 
+### EMBED LIBRARY ###
 async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
     if color:
         embed.colour = color
@@ -30,15 +32,25 @@ async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discor
         await asyncio.sleep(sleep)
 
 
+### 'DISCORD.PY PLUS' ###
+
 class SecureButton(discord.ui.Button):
-    def __init__(self, ctx=None, label=None, emoji=None, style=None):
+    def __init__(self, ctx, user=None, label=None, emoji=None, style=None):
         super().__init__(label=label, emoji=emoji, style=style)
         self.ctx = ctx
+        self.pressed = False
+        self.authorized_user = user if user else ctx.author
 
     async def verify_user(self, interaction) -> bool:
-        if interaction.user != self.ctx.author:
+        if interaction.user != self.authorized_user:
             await interaction.response.send_message("Please don't interact with other users' buttons", ephemeral=True)
             return False
+        return True
+
+    async def callback(self, interaction):
+        if not await self.verify_user(interaction):
+            return False
+        self.pressed = True
         return True
 
 
@@ -61,7 +73,7 @@ class TrackerButton(SecureButton):
 
     # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
-        if not await self.verify_user(interaction):
+        if not await super().callback(interaction):
             return
 
         self.var += 1
@@ -77,26 +89,24 @@ class TrackerButton(SecureButton):
 
 
 class ExitButton(SecureButton):
-    def __init__(self, ctx, embed, exit_field=None, value_symbol="", label=None, emoji=None, style=None):
+    def __init__(self, ctx, embed, exit_field: {} = None, value_symbol="", label=None, emoji=None, style=None):
         super().__init__(ctx=ctx, label=label, emoji=emoji, style=style)
-
-        if exit_field is None:
-            exit_field = {"name": "", "value": ""}
-
         self.embed = embed
         self.exit_field = exit_field
         self.value_symbol = value_symbol
 
     # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
-        if not await self.verify_user(interaction):
+        if not await super().callback(interaction):
             return
 
         await interaction.response.defer()
         await self.on_exit(interaction, self.embed)
 
-        self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
-                             inline=False)
+        if self.exit_field:
+            self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
+                                 inline=False)
+
         msg = await interaction.original_response()
         await msg.edit(embed=self.embed, view=None)
 
@@ -128,4 +138,41 @@ class ListenerField:
         return 1
 
     def value_format(self) -> str:
-        return self.value.replace("<var>", f"{self.var:.2f}" if isinstance(self.var, float) else str(self.var))
+        return self.value.replace("<var>", str(self.var))
+
+
+async def confirmation_request(ctx, text: str = "Proceed?", timeout=60, user=None):
+    embed = discord.Embed(
+        colour=discord.Colour.lighter_grey(),
+        title="Confirmation Request",
+        description=text
+    )
+
+    buttons = [
+        SecureButton(ctx, emoji="✔", style=discord.ButtonStyle.success, user=user),
+        SecureButton(ctx, emoji="✖", style=discord.ButtonStyle.danger, user=user),
+    ]
+
+    view = discord.ui.View()
+    for button in buttons:
+        view.add_item(button)
+
+    msg = await ctx.send(embed=embed, view=view)
+
+    start_time = datetime.datetime.now()
+
+    while datetime.datetime.now() - start_time < datetime.timedelta(seconds=timeout):
+        if buttons[0].pressed:
+            embed.set_footer(text="Action Confirmed")
+            await msg.edit(embed=embed, view=None)
+            return True
+        elif buttons[1].pressed:
+            embed.set_footer(text="Action Denied")
+            await msg.edit(embed=embed, view=None)
+            return False
+        else:
+            await asyncio.sleep(1)
+
+    embed.set_footer(text=f"Confirmation Request Timed Out ({timeout}s)")
+    await msg.edit(embed=embed, view=None)
+    return False
