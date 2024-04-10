@@ -72,6 +72,7 @@ class Actions(commands.Cog):
             return
 
         if account.action_start is not None:
+            await ctx.reply("You are already performing an action!", mention_author=False)
             await self.send_action_status(ctx, account)
             return
 
@@ -132,6 +133,7 @@ class Actions(commands.Cog):
         account = await Account.fetch(user_id)
 
         if account.action_start is not None:
+            await ctx.reply("You are already performing an action!", mention_author=False)
             await self.send_action_status(ctx, account)
             return
 
@@ -216,6 +218,7 @@ class Actions(commands.Cog):
         percent_left = (elapsed_hours / account.action_length)
 
         if percent_left > 1:
+            await ctx.reply("Your action just finished!", mention_author=False)
             await self.pop_actions(account, elapsed_time)
             return
 
@@ -250,7 +253,17 @@ class Actions(commands.Cog):
             logger.debug(f"{account.user_id} | {account.action_type} | "
                          f"{account.action_start} | {account.action_length} | {elapsed_hours}")
             if elapsed_hours >= account.action_length:
-                await self.pop_actions(account, elapsed_time)
+                try:
+                    await self.pop_actions(account, elapsed_time)
+                except discord.Forbidden:
+                    logger.warning(f"CAN'T DM USER={account.user_id} | REMOVING ACTION FROM DATABASE")
+                    await Account.update_acct(account=account, action_start="NULL", action_length="NULL",
+                                              action_type="NULL")
+                except Exception as e:
+                    logger.warning(
+                        f"ENCOUNTERED MISCELLANEOUS ERROR ON USER={account.user_id} | {e} | REMOVING ACTION FROM DATABASE")
+                    await Account.update_acct(account=account, action_start="NULL", action_length="NULL",
+                                              action_type="NULL")
 
     @check_action_times.before_loop
     async def before_check_action_times(self):
