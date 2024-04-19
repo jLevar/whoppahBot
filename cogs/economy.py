@@ -225,24 +225,26 @@ class Economy(commands.Cog):
                               label="X", style=discord.ButtonStyle.danger),
         ]
 
-        async def checkout(interaction, _embed):
+        async def checkout(interaction, embed):
+            msg = await interaction.original_response()
+            embed = msg.embeds[0]
+
             cost = total_cost.var
             if cost > user_assets.cash:
-                _embed.add_field(name=f"Insufficient Funds",
+                embed.add_field(name=f"Insufficient Funds",
                                  value=f"Your Balance: {Assets.format('cash', user_assets.cash)}")
-                msg = await interaction.original_response()
+                
                 await msg.edit(embed=embed)
             else:
                 old_bal = user_assets.cash
                 await Assets.from_entity(user=user_assets, entity_id="BK", amount=-cost, asset='cash')
                 await Account.update_acct(account=account, main_xp_delta=total_xp.var)
-                _embed.add_field(name=f"Transaction Complete",
+                embed.add_field(name=f"Transaction Complete",
                                  value=f"Starting Balance: {Assets.format('cash', old_bal)}\n"
                                        f"New Balance: {Assets.format('cash', user_assets.cash)}")
-                msg = await interaction.original_response()
                 await msg.edit(embed=embed)
 
-        buttons[-2].on_exit = checkout
+        buttons[-2].on_callback = checkout
 
         view = discord.ui.View()
         for button in buttons:

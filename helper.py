@@ -1,4 +1,5 @@
 import asyncio
+import os
 import discord
 import datetime
 from PIL import Image
@@ -16,21 +17,28 @@ async def validate_user_id(bot, user_id):
     return True
 
 
-def get_sprite(index: int):
+def get_sprite(sprite_name: str):
+    sprites = ["chef_normal", "chef_excited", "chef_angry", "chef_sick"] 
+    index = sprites.index(sprite_name)
+    file_name = f"sprite{index}.png"
+
+    if os.path.isfile(f"sprites\{file_name}"):
+        return file_name
+
     spritesheet = Image.open("sprites\chefwhoppah.png")
     orig_size = 16
     final_size = 100
 
-    # Coordintaes of the sprite's top-left corner
+    # Coordinates of the sprite's top-left corner
     sprite_x = index * orig_size 
-    sprite_y = index * orig_size  
+    sprite_y = 0
 
     sprite = spritesheet.crop((sprite_x, sprite_y, sprite_x + orig_size, sprite_y + orig_size))
     sprite = sprite.resize((final_size, final_size), Image.Resampling.NEAREST)
 
-    name = f"sprite{index}.png"
-    sprite.save(f"sprites\{name}")
-    return name
+    
+    sprite.save(f"sprites\{file_name}")
+    return file_name
 
 ### EMBED LIBRARY ###
 async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
@@ -68,7 +76,13 @@ class SecureButton(discord.ui.Button):
         if not await self.verify_user(interaction):
             return False
         self.pressed = True
+        await interaction.response.defer()
+        await self.on_callback(interaction)
         return True
+    
+    @staticmethod
+    async def on_callback(interaction):
+        return
 
 
 class TrackerButton(SecureButton):
@@ -88,7 +102,6 @@ class TrackerButton(SecureButton):
             listeners = []
         self.listeners = listeners
 
-    # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
         if not await super().callback(interaction):
             return
@@ -96,7 +109,8 @@ class TrackerButton(SecureButton):
         self.var += 1
         self.embed.set_field_at(index=self.field_index, name=self.field_name, value=self.value_format(),
                                 inline=self.inline)
-        await interaction.response.edit_message(embed=self.embed)
+        msg = await interaction.original_response()
+        await msg.edit(embed=self.embed)
 
         for listener in self.listeners:
             await listener.on_event(interaction, data={"name": self.field_name, "value": self.var})
@@ -112,13 +126,9 @@ class ExitButton(SecureButton):
         self.exit_field = exit_field
         self.value_symbol = value_symbol
 
-    # noinspection PyUnresolvedReferences
     async def callback(self, interaction):
         if not await super().callback(interaction):
             return
-
-        await interaction.response.defer()
-        await self.on_exit(interaction, self.embed)
 
         if self.exit_field:
             self.embed.add_field(name=self.exit_field["name"], value=f"{self.value_symbol}{self.exit_field['value']}",
@@ -126,10 +136,6 @@ class ExitButton(SecureButton):
 
         msg = await interaction.original_response()
         await msg.edit(embed=self.embed, view=None)
-
-    @staticmethod
-    async def on_exit(interaction, _embed):
-        return
 
 
 class ListenerField:

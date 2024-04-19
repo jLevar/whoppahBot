@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import random
 
@@ -152,18 +153,49 @@ class Actions(commands.Cog):
 
     @commands.command(brief="Let bro cook")
     async def cook(self, ctx):
+        user = await self.bot.fetch_user(ctx.author.id)
+        
         embed = discord.Embed(
             colour=discord.Colour.from_rgb(77, 199, 222),
             title="Burger King Grill",
             description="Let's start grilling!"
         )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
 
-        sprite = helper.get_sprite(0)
+        sprite = helper.get_sprite("chef_normal")
         sprite_file = discord.File(f"sprites\{sprite}", filename=sprite)
         embed.set_image(url=f"attachment://{sprite}")
 
-        await ctx.send(file=sprite_file, embed=embed)
+        buttons = [
+            helper.SecureButton(ctx, emoji="🔥", style=discord.ButtonStyle.success, user=user),
+            helper.SecureButton(ctx, emoji="🤮", style=discord.ButtonStyle.danger, user=user),
+        ]
+
+        def callback_builder(sprite_name, text):
+            async def on_callback(interaction):
+                msg = await interaction.original_response()
+                embed = msg.embeds[0]
+
+                sprite = helper.get_sprite(sprite_name)
+                sprite_file = discord.File(f"sprites\{sprite}")
+                embed.set_image(url=f"attachment://{sprite}")
+                embed.set_footer(text=text)
+
+                await msg.add_files(sprite_file)
+                await msg.edit(embed=embed, view=None)
+                return 
+            return on_callback
+
+        buttons[0].on_callback = callback_builder("chef_angry", "YOU BURNED THE FOOD")
+        buttons[1].on_callback = callback_builder("chef_sick", "YOU POISONED THE FOOD")
+        
+        view = discord.ui.View()
+        for button in buttons:
+            view.add_item(button)
+
+        msg = await ctx.send(file=sprite_file, embed=embed, view=view)
+        return
+
+        
 
     ## HELPER METHODS
     async def work_result(self, account, elapsed_time):
