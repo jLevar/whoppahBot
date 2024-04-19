@@ -30,7 +30,7 @@ class Basic(commands.Cog):
 
     @commands.command(brief="Parrots what you say")
     async def say(self, ctx, *what):
-        if what == "@everyone":
+        if ctx.message.mentions_everyone():
             await ctx.reply("not cool!", mention_author=False)
         elif what == ():
             await ctx.reply(f"!say requires argument", mention_author=False)
