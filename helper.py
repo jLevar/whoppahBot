@@ -89,7 +89,7 @@ class TrackerButton(SecureButton):
 
 
 class ExitButton(SecureButton):
-    def __init__(self, ctx, embed, exit_field: {} = None, value_symbol="", label=None, emoji=None, style=None):
+    def __init__(self, ctx, embed, exit_field: dict = None, value_symbol="", label=None, emoji=None, style=None):
         super().__init__(ctx=ctx, label=label, emoji=emoji, style=style)
         self.embed = embed
         self.exit_field = exit_field

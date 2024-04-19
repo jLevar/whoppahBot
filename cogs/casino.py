@@ -49,12 +49,14 @@ class Casino(commands.Cog):
         amount = Assets.standardize('cash', amount)
         account = await Account.fetch(ctx.message.author.id)
         account_assets = await Assets.fetch(ctx.message.author.id)
+        user = await self.bot.fetch_user(ctx.message.author.id)
+
         embed = discord.Embed(
             colour=discord.Colour.dark_red(),
             title="A Deal with the Devil",
             description=""
         )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=user.display_avatar.url)
         msg = await ctx.send(embed=embed)
 
         await helper.embed_edit(embed, msg, f"Ahh...\n", sleep=1)
@@ -113,12 +115,14 @@ class Casino(commands.Cog):
         amount = Assets.standardize('cash', amount)
         account = await Account.fetch(ctx.message.author.id)
         account_assets = await Assets.fetch(ctx.message.author.id)
+        user = await self.bot.fetch_user(ctx.message.author.id)
+
         embed = discord.Embed(
             colour=discord.Colour.light_grey(),
             title="A Flip of the Coin",
             description="Back again?\n\n"
         )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=user.display_avatar.url)
         msg = await ctx.send(embed=embed)
         await asyncio.sleep(1)
 

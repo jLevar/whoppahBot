@@ -1,7 +1,10 @@
 /venv/
 /.env
-/logs/*
+
 .idea/*
-__pycache__/
-/imgs/
+
+__pycache__/*
+*.pyc
+
 data.db
+/logs/*

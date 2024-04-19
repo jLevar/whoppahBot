@@ -50,20 +50,21 @@ class Account(BaseModel):
         expected_args = ['job_title', 'action_start', 'action_length', 'action_type', 'has_redeemed_daily',
                          'daily_allocated_bets', 'daily_allocated_bets_delta', 'daily_streak', 'daily_streak_delta',
                          'main_xp', 'main_xp_delta']
-        acct = account or await Account.fetch(user_id=user_id)
+        user_id = user_id or account.user_id
+        with BaseModel._meta.database.atomic():
+            acct = await Account.fetch(user_id=user_id)
+            for key, value in kwargs.items():
+                if key not in expected_args:
+                    raise AttributeError("Tried updating account with bad argument")
 
-        for key, value in kwargs.items():
-            if key not in expected_args:
-                raise AttributeError("Tried updating account with bad argument")
+                if value is not None:
+                    if value == "NULL":
+                        value = None
 
-            if value is not None:
-                if value == "NULL":
-                    value = None
-
-                # Parameters ending in _delta are meant to modify without overwriting existing data
-                if key[-6:] == '_delta':
-                    curr_data = getattr(acct, key[:-6])
-                    setattr(acct, key[:-6], curr_data + value)
-                else:
-                    setattr(acct, key, value)
-        acct.save()
+                    # Parameters ending in _delta are meant to modify without overwriting existing data
+                    if key[-6:] == '_delta':
+                        curr_data = getattr(acct, key[:-6])
+                        setattr(acct, key[:-6], curr_data + value)
+                    else:
+                        setattr(acct, key, value)
+            acct.save()
