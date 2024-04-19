@@ -161,13 +161,12 @@ class Actions(commands.Cog):
             description="Let's start grilling!"
         )
 
-        sprite = helper.get_sprite("chef_normal")
-        sprite_file = discord.File(f"sprites\{sprite}", filename=sprite)
-        embed.set_image(url=f"attachment://{sprite}")
+        embed.set_image(url=helper.get_image("chef_normal"))
 
         buttons = [
             helper.SecureButton(ctx, emoji="🔥", style=discord.ButtonStyle.success, user=user),
             helper.SecureButton(ctx, emoji="🤮", style=discord.ButtonStyle.danger, user=user),
+            helper.SecureButton(ctx, emoji="👴", style=discord.ButtonStyle.gray, user=user)
         ]
 
         def callback_builder(sprite_name, text):
@@ -175,27 +174,22 @@ class Actions(commands.Cog):
                 msg = await interaction.original_response()
                 embed = msg.embeds[0]
 
-                sprite = helper.get_sprite(sprite_name)
-                sprite_file = discord.File(f"sprites\{sprite}")
-                embed.set_image(url=f"attachment://{sprite}")
+                embed.set_image(url=helper.get_image(sprite_name))
                 embed.set_footer(text=text)
 
-                await msg.add_files(sprite_file)
                 await msg.edit(embed=embed, view=None)
                 return 
             return on_callback
 
         buttons[0].on_callback = callback_builder("chef_angry", "YOU BURNED THE FOOD")
         buttons[1].on_callback = callback_builder("chef_sick", "YOU POISONED THE FOOD")
+        buttons[2].on_callback = callback_builder("old_man", "GET REKT!")
         
         view = discord.ui.View()
         for button in buttons:
             view.add_item(button)
 
-        msg = await ctx.send(file=sprite_file, embed=embed, view=view)
-        return
-
-        
+        await ctx.send(embed=embed, view=view)        
 
     ## HELPER METHODS
     async def work_result(self, account, elapsed_time):

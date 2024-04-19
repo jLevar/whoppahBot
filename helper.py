@@ -16,8 +16,17 @@ async def validate_user_id(bot, user_id):
         return False
     return True
 
+def get_image(sprite_name: str):
+    sprites = {
+        "chef_normal": "https://i.ibb.co/BK9y0Lc/sprite0.png", 
+        "chef_excited": "NULL",
+        "chef_angry": "https://i.ibb.co/F6w0B9s/sprite2.png", 
+        "chef_sick": "https://i.ibb.co/6nDjDs2/sprite3.png",
+        "old_man": "https://i.ibb.co/wwxYRJR/carlupmoment.gif"
+    }
+    return sprites[sprite_name]
 
-def get_sprite(sprite_name: str):
+def get_sprite_local(sprite_name: str):
     sprites = ["chef_normal", "chef_excited", "chef_angry", "chef_sick"] 
     index = sprites.index(sprite_name)
     file_name = f"sprite{index}.png"
