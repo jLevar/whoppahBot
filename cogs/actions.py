@@ -150,6 +150,21 @@ class Actions(commands.Cog):
 
         await ctx.reply("You started mining!", mention_author=False)
 
+    @commands.command(brief="Let bro cook")
+    async def cook(self, ctx):
+        embed = discord.Embed(
+            colour=discord.Colour.from_rgb(77, 199, 222),
+            title="Burger King Grill",
+            description="Let's start grilling!"
+        )
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+
+        sprite = helper.get_sprite(0)
+        sprite_file = discord.File(f"sprites\{sprite}", filename=sprite)
+        embed.set_image(url=f"attachment://{sprite}")
+
+        await ctx.send(file=sprite_file, embed=embed)
+
     ## HELPER METHODS
     async def work_result(self, account, elapsed_time):
         user = await self.bot.fetch_user(account.user_id)

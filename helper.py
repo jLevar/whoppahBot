@@ -1,6 +1,7 @@
 import asyncio
 import discord
 import datetime
+from PIL import Image
 
 
 async def safe_shutdown(bot):
@@ -14,6 +15,22 @@ async def validate_user_id(bot, user_id):
         return False
     return True
 
+
+def get_sprite(index: int):
+    spritesheet = Image.open("sprites\chefwhoppah.png")
+    orig_size = 16
+    final_size = 100
+
+    # Coordintaes of the sprite's top-left corner
+    sprite_x = index * orig_size 
+    sprite_y = index * orig_size  
+
+    sprite = spritesheet.crop((sprite_x, sprite_y, sprite_x + orig_size, sprite_y + orig_size))
+    sprite = sprite.resize((final_size, final_size), Image.Resampling.NEAREST)
+
+    name = f"sprite{index}.png"
+    sprite.save(f"sprites\{name}")
+    return name
 
 ### EMBED LIBRARY ###
 async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
