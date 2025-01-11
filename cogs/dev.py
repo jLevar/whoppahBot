@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import helper
 import settings
-import socket
+import netifaces
 from cogs.casino import Casino
 from models.account import Account
 from models.assets import Assets
@@ -219,9 +219,19 @@ class Dev(commands.Cog):
     @commands.command(hidden=True, aliases=["ip"])
     @commands.is_owner()
     async def get_server_ip(self, ctx):
-        hostname = socket.gethostname()
-        owner = await self.bot.fetch_user(settings.OWNER_ID)
-        await owner.send(socket.gethostbyname(hostname))
+        for interface in netifaces.interfaces():
+            addresses = netifaces.ifaddresses(interface)
+            # netifaces.AF_INET represents IPv4 address
+            if netifaces.AF_INET in addresses:
+                for address_info in addresses[netifaces.AF_INET]:
+                    ip_address = address_info['addr']
+                    if ip_address == "127.0.0.1":
+                        continue
+                    owner = await self.bot.fetch_user(settings.OWNER_ID)
+                    await owner.send(f"Server IP: {ip_address}")
+                    return
+
+        await ctx.send("No active network interface found.")
 
     @commands.command(hidden=True)
     @commands.is_owner()
