@@ -16,18 +16,20 @@ async def validate_user_id(bot, user_id):
         return False
     return True
 
+
 def get_image(sprite_name: str):
     sprites = {
-        "chef_normal": "https://i.ibb.co/BK9y0Lc/sprite0.png", 
+        "chef_normal": "https://i.ibb.co/BK9y0Lc/sprite0.png",
         "chef_excited": "NULL",
-        "chef_angry": "https://i.ibb.co/F6w0B9s/sprite2.png", 
+        "chef_angry": "https://i.ibb.co/F6w0B9s/sprite2.png",
         "chef_sick": "https://i.ibb.co/6nDjDs2/sprite3.png",
         "old_man": "https://i.ibb.co/wwxYRJR/carlupmoment.gif"
     }
     return sprites[sprite_name]
 
+
 def get_sprite_local(sprite_name: str):
-    sprites = ["chef_normal", "chef_excited", "chef_angry", "chef_sick"] 
+    sprites = ["chef_normal", "chef_excited", "chef_angry", "chef_sick"]
     index = sprites.index(sprite_name)
     file_name = f"sprite{index}.png"
 
@@ -39,15 +41,15 @@ def get_sprite_local(sprite_name: str):
     final_size = 100
 
     # Coordinates of the sprite's top-left corner
-    sprite_x = index * orig_size 
+    sprite_x = index * orig_size
     sprite_y = 0
 
     sprite = spritesheet.crop((sprite_x, sprite_y, sprite_x + orig_size, sprite_y + orig_size))
     sprite = sprite.resize((final_size, final_size), Image.Resampling.NEAREST)
 
-    
     sprite.save(f"sprites\{file_name}")
     return file_name
+
 
 ### EMBED LIBRARY ###
 async def embed_edit(embed, msg, append: str = "", sleep: int = 0, color: discord.Colour = None, footer: str = ""):
@@ -88,7 +90,7 @@ class SecureButton(discord.ui.Button):
         await interaction.response.defer()
         await self.on_callback(interaction)
         return True
-    
+
     @staticmethod
     async def on_callback(interaction):
         return
@@ -177,8 +179,9 @@ async def confirmation_request(ctx, text: str = "Proceed?", timeout=60, user=Non
     embed = discord.Embed(
         colour=discord.Colour.lighter_grey(),
         title="Confirmation Request",
-        description=text
+        description=text,
     )
+    embed.set_footer(text=str(ctx.author).capitalize())
 
     buttons = [
         SecureButton(ctx, emoji="✔", style=discord.ButtonStyle.success, user=user),

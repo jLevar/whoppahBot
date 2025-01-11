@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import helper
 import settings
+import socket
 from cogs.casino import Casino
 from models.account import Account
 from models.assets import Assets
@@ -134,7 +135,7 @@ class Dev(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def gambling_psa(self, ctx, mention="<@350393195085168650>"):
+    async def gambling_psa(self, ctx, mention=f"<@{settings.OWNER_ID}>"):
         user_id = mention[2:-1]
         if not await helper.validate_user_id(self.bot, user_id):
             await ctx.send("Invalid user_id")
@@ -180,17 +181,12 @@ class Dev(commands.Cog):
         await Account.update_acct(user_id=ctx.author.id, daily_allocated_bets=n)
         await ctx.send("successfully smdabtn'd")
 
+    ## DATABASE
     @commands.command(hidden=True)
     @commands.is_owner()
     async def clean_database(self, ctx):
         await Account.clean_database()
         await ctx.send("Database cleaned of all invalid user id's")
-
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def shutdown(self, ctx):
-        await ctx.send("Shutting down...")
-        await helper.safe_shutdown(self.bot)
 
     @commands.command(hidden=True, aliases=["sea"])
     @commands.is_owner()
@@ -218,3 +214,17 @@ class Dev(commands.Cog):
         await Assets.update_assets(entity_id=entity_id, **{update_column: data})
 
         await ctx.send(f"Changed ID={entity_id}'s {asset_type} {operation} {Assets.format(asset_type, data)}")
+
+    ## SERVER
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def get_server_ip(self, ctx):
+        hostname = socket.gethostname()
+        owner = await self.bot.fetch_user(settings.OWNER_ID)
+        await owner.send(socket.gethostbyname(hostname))
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def shutdown(self, ctx):
+        await ctx.send("Shutting down...")
+        await helper.safe_shutdown(self.bot)
